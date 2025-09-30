@@ -1,0 +1,7 @@
+/* Tailwind base imports */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App-level adjustments */
+html, body, #root { height: 100%; }
