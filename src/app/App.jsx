@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import RootLayout from './layouts/RootLayout';
 
@@ -25,32 +24,22 @@ function HomePage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Task Tracker
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Добро пожаловать в приложение для управления задачами!
-        </p>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Task Tracker</h1>
+        <p className="text-gray-600 mb-6">Добро пожаловать в приложение для управления задачами!</p>
         <div className="space-y-3">
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-green-800 text-sm">
-              ✅ React приложение успешно запущено
-            </p>
+            <p className="text-green-800 text-sm">✅ React приложение успешно запущено</p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-blue-800 text-sm">
-              🎨 Tailwind CSS работает корректно
-            </p>
+            <p className="text-blue-800 text-sm">🎨 Tailwind CSS работает корректно</p>
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-            <p className="text-purple-800 text-sm">
-              🚀 Vite dev server активен
-            </p>
+            <p className="text-purple-800 text-sm">🚀 Vite dev server активен</p>
           </div>
         </div>
         <div className="mt-6">
-          <a 
-            href="/about" 
+          <a
+            href="/about"
             className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
           >
             О проекте
@@ -74,19 +63,29 @@ function AboutPage() {
             Это современное React приложение для управления задачами, построенное с использованием:
           </p>
           <ul className="list-disc list-inside space-y-2 ml-4">
-            <li><strong>React 18</strong> - для создания пользовательского интерфейса</li>
-            <li><strong>Vite</strong> - быстрый инструмент сборки</li>
-            <li><strong>Tailwind CSS</strong> - для стилизации</li>
-            <li><strong>React Router</strong> - для навигации</li>
-            <li><strong>Zustand</strong> - для управления состоянием</li>
+            <li>
+              <strong>React 18</strong> - для создания пользовательского интерфейса
+            </li>
+            <li>
+              <strong>Vite</strong> - быстрый инструмент сборки
+            </li>
+            <li>
+              <strong>Tailwind CSS</strong> - для стилизации
+            </li>
+            <li>
+              <strong>React Router</strong> - для навигации
+            </li>
+            <li>
+              <strong>Zustand</strong> - для управления состоянием
+            </li>
           </ul>
           <p>
             Проект использует архитектуру Feature-Sliced Design (FSD) для лучшей организации кода.
           </p>
         </div>
         <div className="mt-8 text-center">
-          <a 
-            href="/" 
+          <a
+            href="/"
             className="inline-block bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
           >
             Вернуться на главную

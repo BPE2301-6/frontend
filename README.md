@@ -1,6 +1,7 @@
 # Frontend
 
 ## Требования
+
 - Node.js 22 LTS (или 20 LTS)
 - Yarn (рекомендуется)
 
@@ -11,7 +12,9 @@ cp .env.example .env     # задать VITE_API_URL при необходимо
 yarn install             # установить зависимости
 yarn dev                 # запустить дев-сервер
 ```
+
 Альтернативно через make:
+
 ```bash
 make env
 make install
@@ -19,6 +22,7 @@ make dev
 ```
 
 ## Скрипты
+
 - yarn dev — запуск дев-сервера Vite
 - yarn build — сборка прод-бандла в dist/
 - yarn preview — локальный сервер предпросмотра собранного
@@ -64,6 +68,7 @@ src/
 3. Настроить nginx на раздачу статики из этой папки
 
 ### Пример location (фрагмент конфигурации):
+
 ```
 server {
     listen 80;

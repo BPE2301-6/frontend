@@ -4,4 +4,8 @@
 @tailwind utilities;
 
 /* App-level adjustments */
-html, body, #root { height: 100%; }
+html,
+body,
+#root {
+  height: 100%;
+}
