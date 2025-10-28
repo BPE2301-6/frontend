@@ -1,7 +1,7 @@
 # Требуется: Node.js 22 LTS (или 20 LTS) и Yarn.
 SHELL := /bin/bash
 
-PKG ?= yarn
+PKG ?= npx yarn
 
 .PHONY: help
 help:
