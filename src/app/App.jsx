@@ -1,12 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import RootLayout from '@app/layouts/RootLayout';
+import KanbanBoard from '@widgets/KanbanBoard';
 
 function App() {
   return (
     <Router>
       <RootLayout>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<KanbanBoard />} />
           <Route path="/about" element={<AboutPage />} />
         </Routes>
       </RootLayout>
