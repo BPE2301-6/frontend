@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import RootLayout from '@app/layouts/RootLayout';
 import KanbanBoard from '@widgets/KanbanBoard';
+import ComponentsDemo from '@pages/ComponentsDemo';
 
 function App() {
   return (
@@ -8,46 +9,11 @@ function App() {
       <RootLayout>
         <Routes>
           <Route path="/" element={<KanbanBoard />} />
+          <Route path="/components" element={<ComponentsDemo />} />
           <Route path="/about" element={<AboutPage />} />
         </Routes>
       </RootLayout>
     </Router>
-  );
-}
-
-// Простая домашняя страница для проверки
-function HomePage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 text-center">
-        <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Task Tracker</h1>
-        <p className="text-gray-600 mb-6">Добро пожаловать в приложение для управления задачами!</p>
-        <div className="space-y-3">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-green-800 text-sm">✅ React приложение успешно запущено</p>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-blue-800 text-sm">🎨 Tailwind CSS работает корректно</p>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-            <p className="text-purple-800 text-sm">🚀 Vite dev server активен</p>
-          </div>
-        </div>
-        <div className="mt-6">
-          <a
-            href="/about"
-            className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            О проекте
-          </a>
-        </div>
-      </div>
-    </div>
   );
 }
 
