@@ -1,0 +1,38 @@
+name: lint
+
+on:
+  push:
+    branches: [ dev ]
+    paths:
+      - "src/**"
+      - ".eslintrc*"
+      - ".prettierrc*"
+      - "package.json"
+      - "yarn.lock"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: "yarn.lock"
+
+      - name: install deps
+        run: yarn install --frozen-lockfile
+
+      - name: eslint
+        run: yarn lint
+
+      - name: prettier check
+        run: yarn prettier --check "**/*.{js,jsx,json,css,scss,md}"
