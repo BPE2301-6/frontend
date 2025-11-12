@@ -162,9 +162,9 @@ function KanbanBoard() {
         </div>
       </div>
 
-      <div className="absolute left-[90px] top-[167px] text-figma-title font-montserrat font-medium text-figma-white leading-[29px]">
+      {/* <div className="absolute left-[90px] top-[167px] text-figma-title font-montserrat font-medium text-figma-white leading-[29px]">
         возможно тут будет деление на доски
-      </div>
+      </div> */}
 
       <div className="absolute w-full h-[1px] left-0 top-[196px] bg-figma-blue"></div>
 
