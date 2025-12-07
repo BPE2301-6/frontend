@@ -8,7 +8,7 @@
 ## Быстрый старт
 
 ```bash
-cp .env.example .env     # задать VITE_API_URL при необходимости
+# создайте .env и пропишите VITE_API_URL (+ VITE_DEFAULT_PROJECT_ID по желанию)
 yarn install             # установить зависимости
 yarn dev                 # запустить дев-сервер
 ```
@@ -39,6 +39,14 @@ make dev
 ## Переменные окружения
 
 - VITE_API_URL — базовый URL бэкенда
+- VITE_DEFAULT_PROJECT_ID — id проекта по умолчанию (если не передан query-параметр `projectId` на странице доски)
+
+Пример `.env` (создайте рядом с package.json):
+
+```
+VITE_API_URL=http://localhost:3000
+VITE_DEFAULT_PROJECT_ID=00000000-0000-0000-0000-000000000000
+```
 
 ## Структура каталогов
 

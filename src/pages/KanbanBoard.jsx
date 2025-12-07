@@ -1,179 +1,350 @@
-function TaskCard({
-  title,
-  description,
-  date,
-  type,
-  priority,
-  assignee: _assignee,
-  className = '',
-}) {
-  const getPriorityColor = () => {
-    switch (priority) {
-      case 'high':
-        return 'bg-figma-red';
-      case 'medium':
-        return 'bg-figma-yellow';
-      case 'low':
-        return 'bg-figma-green';
-      default:
-        return 'bg-figma-red';
-    }
-  };
+import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import TaskModal from './TaskModal';
+import { useStatuses } from '@entities/statuses/useStatuses';
+import { useTasks } from '@entities/tasks/useTasks';
+
+const PRIORITY_COLOR = {
+  HIGH: 'bg-[#FD5353]',
+  MEDIUM: 'bg-[#FDD253]',
+  LOW: 'bg-[#62C53E]',
+};
+
+const PRIORITY_LABEL = {
+  HIGH: 'Высокий',
+  MEDIUM: 'Средний',
+  LOW: 'Низкий',
+};
+
+const formatDate = (value) => {
+  if (!value) return 'Без срока';
+  try {
+    const date = new Date(value);
+    return date.toLocaleDateString();
+  } catch {
+    return value;
+  }
+};
+
+function TaskCard({ task, statuses, onEdit, onMove, onDelete }) {
+  const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
 
   return (
-    <div
-      className={`w-figma-card-width h-figma-card-height bg-figma-card rounded-figma-card relative ${className}`}
-    >
-      <div
-        className={`absolute w-[17px] h-[17px] rounded-full ${getPriorityColor()} top-[18px] right-[24px]`}
-      ></div>
-
-      <div className="absolute top-[15px] left-[24px]">
-        <div className="text-figma-card-title font-montserrat font-medium text-figma-white leading-[20px]">
-          {title}
-        </div>
-      </div>
-
-      <div className="absolute top-[49px] left-[24px]">
-        <div className="text-figma-card-text font-montserrat font-medium text-figma-text-secondary leading-[17px]">
-          {description}
-        </div>
-      </div>
-
-      {date && (
-        <div className="absolute top-[91px] left-[24px]">
-          <div className="text-figma-card-text font-montserrat font-medium text-figma-text-secondary leading-[17px]">
-            {date}
+    <div className="bg-[#313236] border border-[#1E80D9] rounded-2xl p-4 space-y-3 shadow-md">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-lg font-semibold text-white">{task.title}</div>
+          <div className="text-sm text-[#A1A1A4]">
+            {task.description || 'Без описания'}
           </div>
         </div>
-      )}
-
-      <div className="absolute bottom-[17px] left-[24px]">
-        <div className="text-figma-card-text font-montserrat font-medium text-figma-text-secondary leading-[17px]">
-          {type}
-        </div>
+        <span
+          className={`w-4 h-4 rounded-full shrink-0 mt-1 ${priorityColor}`}
+          title={PRIORITY_LABEL[task.priority] || task.priority}
+        />
       </div>
 
-      <div className="absolute bottom-[17px] right-[24px]">
-        <div className="w-9 h-9 bg-figma-white rounded-full flex items-center justify-center">
-          <div className="w-6 h-6 border-4 border-figma-user-border rounded-full"></div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function KanbanColumn({ title, tasks, className = '' }) {
-  return (
-    <div
-      className={`w-figma-column-width h-figma-column-height border border-figma-blue border-t-0 rounded-t-figma-column relative ${className}`}
-    >
-      <div className="absolute -top-[47px] left-1/2 transform -translate-x-1/2">
-        <div className="text-figma-title font-montserrat font-normal text-figma-white leading-[29px]">
-          {title}
-        </div>
+      <div className="flex items-center text-xs text-[#A1A1A4] gap-2 flex-wrap">
+        <span>Приоритет: {PRIORITY_LABEL[task.priority] || '—'}</span>
+        <span className="w-[1px] h-3 bg-[#444]" />
+        <span>Исполнитель: {task.assignee_id || '—'}</span>
+        <span className="w-[1px] h-3 bg-[#444]" />
+        <span>Автор: {task.reporter_id || '—'}</span>
       </div>
 
-      <div className="pt-6 px-6 space-y-4">
-        {tasks.map((task, index) => (
-          <TaskCard key={index} {...task} />
-        ))}
+      <div className="flex items-center justify-between text-sm text-[#A1A1A4]">
+        <span>Дедлайн: {formatDate(task.due_date)}</span>
+        <span className="text-[#6AA8FF]">
+          {statuses.find((s) => s.id === task.status_id)?.name || '—'}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <select
+          className="bg-[#242528] border border-[#1E80D9] text-white text-sm rounded-lg px-3 py-2 focus:outline-none"
+          value={task.status_id}
+          onChange={(e) => onMove(task.id, e.target.value)}
+        >
+          {statuses.map((status) => (
+            <option key={status.id} value={status.id}>
+              {status.name}
+            </option>
+          ))}
+        </select>
+        <button
+          className="px-3 py-2 bg-[#1E80D9] text-white text-sm rounded-lg hover:bg-[#166bb7] transition"
+          onClick={() => onEdit(task)}
+        >
+          Редактировать
+        </button>
+        <button
+          className="px-3 py-2 bg-[#FD5353] text-white text-sm rounded-lg hover:bg-[#d94444] transition"
+          onClick={() => onDelete(task.id)}
+        >
+          Удалить
+        </button>
       </div>
     </div>
   );
 }
 
 function KanbanBoard() {
-  const tasks = {
-    todo: [
-      {
-        title: 'Название',
-        description: 'Описание таски',
-        date: '16.10.25',
-        type: 'тип #номер',
-        priority: 'high',
-        assignee: 'A',
-      },
-      {
-        title: 'Задача 2',
-        description: 'Описание второй задачи',
-        date: '17.10.25',
-        type: 'bug #123',
-        priority: 'medium',
-        assignee: 'B',
-      },
-      {
-        title: 'Задача 3',
-        description: 'Описание третьей задачи',
-        date: '18.10.25',
-        type: 'feature #456',
-        priority: 'low',
-        assignee: 'C',
-      },
-    ],
-    inProgress: [
-      {
-        title: 'В работе',
-        description: 'Задача в процессе выполнения',
-        date: '15.10.25',
-        type: 'task #789',
-        priority: 'high',
-        assignee: 'D',
-      },
-    ],
-    review: [],
-    done: [],
+  const [searchParams] = useSearchParams();
+  const projectId =
+    searchParams.get('projectId') || import.meta.env.VITE_DEFAULT_PROJECT_ID;
+
+  const [filters, setFilters] = useState({ q: '' });
+  const [newStatusName, setNewStatusName] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTask, setModalTask] = useState(null);
+
+  const {
+    statuses,
+    loading: loadingStatuses,
+    error: statusesError,
+    createStatus,
+    deleteStatus,
+    isApiError: isStatusApiError,
+  } = useStatuses(projectId);
+
+  const {
+    tasks,
+    loading: loadingTasks,
+    error: tasksError,
+    setFilters: setTaskFilters,
+    createTask,
+    updateTask,
+    deleteTask,
+    moveTask,
+    isApiError: isTaskApiError,
+  } = useTasks(projectId, filters);
+
+  const tasksByStatus = useMemo(() => {
+    const grouped = {};
+    statuses.forEach((status) => {
+      grouped[status.id] = [];
+    });
+    tasks.forEach((task) => {
+      if (grouped[task.status_id]) {
+        grouped[task.status_id].push(task);
+      }
+    });
+    return grouped;
+  }, [statuses, tasks]);
+
+  const handleSaveTask = async (payload) => {
+    if (!projectId) return;
+    try {
+      if (modalTask?.id) {
+        await updateTask(modalTask.id, payload);
+      } else {
+        await createTask(payload);
+      }
+      setIsModalOpen(false);
+      setModalTask(null);
+    } catch (err) {
+      const message =
+        (isTaskApiError(err) && err.payload?.message) || err.message || 'Ошибка сохранения';
+      alert(message);
+    }
   };
 
+  const handleMoveTask = async (taskId, statusId) => {
+    try {
+      await moveTask(taskId, statusId);
+    } catch (err) {
+      const message =
+        (isTaskApiError(err) && err.payload?.message) || err.message || 'Ошибка переноса';
+      alert(message);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    const confirmed = window.confirm('Удалить задачу?');
+    if (!confirmed) return;
+    try {
+      await deleteTask(taskId);
+    } catch (err) {
+      const message =
+        (isTaskApiError(err) && err.payload?.message) || err.message || 'Ошибка удаления';
+      alert(message);
+    }
+  };
+
+  const handleAddStatus = async () => {
+    const name = newStatusName.trim();
+    if (!name || !projectId) return;
+    try {
+      await createStatus({
+        name,
+        position: statuses.length,
+        is_closed: false,
+      });
+      setNewStatusName('');
+    } catch (err) {
+      const message =
+        (isStatusApiError(err) && err.payload?.message) || err.message || 'Ошибка создания колонки';
+      alert(message);
+    }
+  };
+
+  const handleDeleteStatus = async (statusId) => {
+    const hasTasks = tasks.some((task) => task.status_id === statusId);
+    if (hasTasks) {
+      alert('Нельзя удалить статус с задачами.');
+      return;
+    }
+    const confirmed = window.confirm('Удалить колонку?');
+    if (!confirmed) return;
+    try {
+      await deleteStatus(statusId);
+    } catch (err) {
+      const message =
+        (isStatusApiError(err) && err.payload?.message) || err.message || 'Ошибка удаления колонки';
+      alert(message);
+    }
+  };
+
+  const handleOpenModal = (task = null) => {
+    setModalTask(task);
+    setIsModalOpen(true);
+  };
+
+  const projectHint =
+    'Добавьте ?projectId=<uuid> к адресу или задайте VITE_DEFAULT_PROJECT_ID в .env';
+
+  if (!projectId) {
+    return (
+      <div className="min-h-screen bg-[#242528] text-white flex items-center justify-center">
+        <div className="space-y-2 text-center">
+          <div className="text-xl font-semibold">Не указан projectId</div>
+          <div className="text-sm text-[#A1A1A4]">{projectHint}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-[1831px] h-[1024px] bg-figma-bg relative">
-      <div className="absolute w-full h-figma-header top-0 left-0 bg-figma-bg border-b border-figma-blue">
-        <div className="absolute left-[13px] top-[54px] text-figma-arrow font-montserrat font-bold text-figma-blue leading-[39px]">
-          &gt;
+    <div className="min-h-screen bg-[#242528] text-white px-6 py-6 space-y-6">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Доска проекта</h1>
+          <p className="text-sm text-[#A1A1A4]">
+            projectId: <span className="text-[#6AA8FF]">{projectId}</span>
+          </p>
         </div>
 
-        <div className="absolute w-[1px] h-[148px] left-[44px] top-0 bg-figma-blue transform rotate-90 origin-top"></div>
-
-        <div className="absolute left-[89px] top-[26px] text-figma-title font-montserrat font-bold text-figma-white leading-[29px]">
-          НАЗВАНИЕ ДОСКИ
-        </div>
-
-        <div className="absolute w-[640px] h-[54px] left-[78px] top-[67px] border border-figma-blue rounded-figma-search">
-          <div className="absolute left-[39px] top-[12px] text-figma-title font-montserrat font-medium text-figma-white leading-[29px]">
-            найти таску
-          </div>
-        </div>
-
-        <div className="absolute w-[54px] h-[54px] left-[740px] top-[67px] bg-figma-orange rounded-full flex items-center justify-center">
-          <div className="text-figma-plus font-montserrat font-bold text-figma-white leading-[55px]">
-            +
-          </div>
-        </div>
-
-        <div className="absolute left-[360px] top-[19px] flex space-x-[8px]">
-          {['A', 'B', 'C'].map((user, index) => (
-            <div
-              key={index}
-              className="w-9 h-9 bg-figma-white rounded-full flex items-center justify-center"
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <div className="flex items-center gap-2">
+            <input
+              className="bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
+              placeholder="Поиск по задачам"
+              value={filters.q}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, q: e.target.value }))
+              }
+            />
+            <button
+              className="px-4 py-2 bg-[#1E80D9] rounded-xl hover:bg-[#166bb7] transition text-sm"
+              onClick={() => setTaskFilters((prev) => ({ ...prev, q: filters.q }))}
             >
-              <div className="w-6 h-6 border-4 border-figma-user-border rounded-full"></div>
-            </div>
-          ))}
+              Обновить
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              className="bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
+              placeholder="Новая колонка"
+              value={newStatusName}
+              onChange={(e) => setNewStatusName(e.target.value)}
+            />
+            <button
+              className="px-4 py-2 bg-[#FF8800] rounded-xl hover:bg-[#e67800] transition text-sm"
+              onClick={handleAddStatus}
+            >
+              Добавить
+            </button>
+          </div>
+
+          <button
+            className="px-4 py-2 bg-[#1E80D9] rounded-xl hover:bg-[#166bb7] transition text-sm"
+            onClick={() => handleOpenModal(null)}
+          >
+            Новая задача
+          </button>
         </div>
+      </header>
+
+      {(tasksError || statusesError) && (
+        <div className="bg-[#FD5353] bg-opacity-20 border border-[#FD5353] text-white rounded-xl px-4 py-3 text-sm">
+          {(tasksError || statusesError)?.message || 'Ошибка загрузки данных'}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-4 items-start">
+        {(loadingStatuses || loadingTasks) && (
+          <div className="text-sm text-[#A1A1A4]">Загружаем данные...</div>
+        )}
+
+        {!loadingStatuses && statuses.length === 0 && (
+          <div className="text-sm text-[#A1A1A4]">
+            Колонки не найдены. Создайте первую колонку.
+          </div>
+        )}
       </div>
 
-      {/* <div className="absolute left-[90px] top-[167px] text-figma-title font-montserrat font-medium text-figma-white leading-[29px]">
-        возможно тут будет деление на доски
-      </div> */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {statuses.map((status) => (
+          <div
+            key={status.id}
+            className="bg-[#2a2b2f] border border-[#1E80D9] rounded-3xl p-4 space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-lg font-semibold">{status.name}</div>
+                <div className="text-xs text-[#A1A1A4]">
+                  Позиция: {status.position ?? '-'}
+                </div>
+              </div>
+              <button
+                className="text-[#FD5353] text-sm hover:underline"
+                onClick={() => handleDeleteStatus(status.id)}
+              >
+                Удалить
+              </button>
+            </div>
 
-      <div className="absolute w-full h-[1px] left-0 top-[196px] bg-figma-blue"></div>
+            <div className="space-y-3">
+              {(tasksByStatus[status.id] || []).map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  statuses={statuses}
+                  onEdit={handleOpenModal}
+                  onMove={handleMoveTask}
+                  onDelete={handleDeleteTask}
+                />
+              ))}
 
-      <div className="absolute left-[55px] top-[285px] flex space-x-[70px]">
-        <KanbanColumn title="Сделать" tasks={tasks.todo} />
-        <KanbanColumn title="В работе" tasks={tasks.inProgress} />
-        <KanbanColumn title="На проверке" tasks={tasks.review} />
-        <KanbanColumn title="Готово" tasks={tasks.done} />
+              {(tasksByStatus[status.id] || []).length === 0 && (
+                <div className="text-sm text-[#A1A1A4]">
+                  Нет задач в этой колонке
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
+
+      <TaskModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveTask}
+        statuses={statuses}
+        task={modalTask}
+        isSaving={false}
+      />
     </div>
   );
 }
