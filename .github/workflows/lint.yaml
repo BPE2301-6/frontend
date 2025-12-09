@@ -1,4 +1,4 @@
-name: lint
+name: frontend lint
 
 on:
   push:
@@ -9,30 +9,37 @@ on:
       - ".prettierrc*"
       - "package.json"
       - "yarn.lock"
+  pull_request:
+    branches: [ dev, main ]
+    paths:
+      - "src/**"
+      - ".eslintrc*"
+      - ".prettierrc*"
+      - "package.json"
+      - "yarn.lock"
 
 permissions:
   contents: read
+
+concurrency:
+  group: fe-lint-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
-
-      - name: setup node
-        uses: actions/setup-node@v4
+      - name: Notify Start
+        uses: appleboy/telegram-action@master
         with:
-          node-version: 20
-          cache: yarn
-          cache-dependency-path: "yarn.lock"
-
-      - name: install deps
-        run: yarn install --frozen-lockfile
-
-      - name: eslint
-        run: yarn lint
-
-      - name: prettier check
-        run: yarn prettier --check "**/*.{js,jsx,json,css,scss,md}"
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            🔍 **Запуск линта фронта**
+            Репозиторий: `${{ github.repository }}`
+            Ветка / PR: `${{ github.ref }}`
+            Автор: `${{ github.actor }}`
+            Триггер: `${{ github.event_name }}`
+            🔗 [Workflow](https://github.)

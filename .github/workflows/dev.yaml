@@ -1,0 +1,107 @@
+name: Deploy Frontend to Dev
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-frontend-dev:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notify Start
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            🚀 **Деплой frontend на dev**
+            Репозиторий: `${{ github.repository }}`
+            Ветка: `${{ github.ref }}`
+            Автор: `${{ github.actor }}`
+            Коммит: `${{ github.event.head_commit.message }}`
+            📁 FRONTEND_DIR: `${{ secrets.DEV_FRONTEND_DIR }}`
+            📁 FE_DIST: `${{ secrets.DEV_FE_DIST_DIR }}`
+
+      - name: Install SSH key
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.DEV_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets.DEV_SSH_PORT }} -H ${{ secrets.DEV_SSH_HOST }} > ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        run: |
+          ssh -A -p ${{ secrets.DEV_SSH_PORT }} ${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }} << 'EOF'
+          set -e
+
+          cd "${{ secrets.DEV_FRONTEND_DIR }}"
+          echo "pwd: $(pwd)"
+
+          echo "===> update frontend repo (dev)"
+          git fetch origin
+          git checkout dev
+          git reset --hard origin/dev
+
+          echo "===> build frontend"
+          if command -v yarn >/dev/null 2>&1; then
+            yarn install --frozen-lockfile || yarn install
+            yarn build
+          else
+            npm install
+            npm run build
+          fi
+
+          if [ ! -d "dist" ]; then
+            echo "dist folder not found after build"
+            exit 1
+          fi
+
+          echo "===> sync dist to nginx root"
+          mkdir -p "${{ secrets.DEV_FE_DIST_DIR }}"
+          rm -rf "${{ secrets.DEV_FE_DIST_DIR }}"/*
+          cp -r dist/* "${{ secrets.DEV_FE_DIST_DIR }}/"
+
+          echo "===> reload nginx"
+          if command -v systemctl >/dev/null 2>&1; then
+            sudo systemctl reload nginx || sudo systemctl restart nginx || true
+          fi
+
+          EOF
+
+      - name: Notify Success
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            ✅ **Frontend dev деплоился успешно**
+            Репозиторий: `${{ github.repository }}`
+            Ветка: `${{ github.ref }}`
+            🔗 [Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            📁 FE_DIST: `${{ secrets.DEV_FE_DIST_DIR }}`
+
+      - name: Notify Failure
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            ❌ **Frontend dev деплой упал**
+            Репозиторий: `${{ github.repository }}`
+            Ветка: `${{ github.ref }}`
+            Автор: `${{ github.actor }}`
+            🔗 [Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            📁 FE_DIST: `${{ secrets.DEV_FE_DIST_DIR }}`
+
+      - name: Cleanup
+        run: rm -rf ~/.ssh
