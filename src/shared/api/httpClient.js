@@ -13,7 +13,10 @@ const isEmptyValue = (value) =>
   value === undefined || value === null || value === '';
 
 const buildUrl = (path, query) => {
-  const url = new URL(path, API_BASE_URL);
+  const base = API_BASE_URL.endswith('/') ? API_BASE_URL : '${API_BASE_URL}/';
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+  const url = new URL(normalizedPath, base);
+
   if (query) {
     Object.entries(query)
       .filter(([, value]) => !isEmptyValue(value))

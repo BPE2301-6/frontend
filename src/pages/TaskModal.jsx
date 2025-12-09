@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useUsers } from '@entities/users/useUsers';
 
 const priorityOptions = [
   { value: 'HIGH', label: 'Высокий' },
@@ -15,10 +16,12 @@ const defaultForm = {
   assignee_id: '',
   due_date: '',
   tag_ids: '',
+  comment: '',
 };
 
 function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
   const [form, setForm] = useState(defaultForm);
+  const { users, loading: usersLoading } = useUsers({ limit: 50 });
 
   const firstStatusId = useMemo(
     () => (statuses.length > 0 ? statuses[0].id : ''),
@@ -38,6 +41,7 @@ function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
         assignee_id: task.assignee_id || '',
         due_date: task.due_date ? task.due_date.slice(0, 10) : '',
         tag_ids: Array.isArray(task.tag_ids) ? task.tag_ids.join(', ') : '',
+        comment: '',
       });
     } else {
       setForm({ ...defaultForm, status_id: firstStatusId });
@@ -76,6 +80,10 @@ function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
 
     if (tags.length) {
       payload.tag_ids = tags;
+    }
+
+    if (form.comment.trim()) {
+      payload.comment = form.comment.trim();
     }
 
     onSave(payload);
@@ -143,23 +151,41 @@ function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Исполнитель (assignee_id)</label>
-              <input
+              <label className="text-sm text-[#A1A1A4]">Исполнитель</label>
+              <select
                 className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
                 value={form.assignee_id}
                 onChange={handleChange('assignee_id')}
-                placeholder="uuid"
-              />
+              >
+                <option value="">Не выбран</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.email} {user.name ? `(${user.name})` : ''}
+                  </option>
+                ))}
+              </select>
+              {usersLoading && (
+                <div className="text-xs text-[#A1A1A4]">Загружаем пользователей...</div>
+              )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Автор (reporter_id)</label>
-              <input
+              <label className="text-sm text-[#A1A1A4]">Автор</label>
+              <select
                 className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
                 value={form.reporter_id}
                 onChange={handleChange('reporter_id')}
-                placeholder="uuid"
-              />
+              >
+                <option value="">Не выбран</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.email} {user.name ? `(${user.name})` : ''}
+                  </option>
+                ))}
+              </select>
+              {usersLoading && (
+                <div className="text-xs text-[#A1A1A4]">Загружаем пользователей...</div>
+              )}
             </div>
           </div>
 
@@ -195,9 +221,22 @@ function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
                 className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
                 value={form.tag_ids}
                 onChange={handleChange('tag_ids')}
-                placeholder="uuid1, uuid2"
+                placeholder="например: ui, backend"
               />
+              <div className="text-xs text-[#A1A1A4]">
+                До появления справочника используйте произвольные метки.
+              </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-[#A1A1A4]">Комментарий</label>
+            <textarea
+              className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none min-h-[80px]"
+              placeholder="Оставьте комментарий к задаче"
+              value={form.comment}
+              onChange={handleChange('comment')}
+            />
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">
