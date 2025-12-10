@@ -26,8 +26,6 @@ jobs:
             Ветка: `${{ github.ref }}`
             Автор: `${{ github.actor }}`
             Коммит: `${{ github.event.head_commit.message }}`
-            📁 FRONTEND_DIR: `${{ secrets.DEV_FRONTEND_DIR }}`
-            📁 FE_DIST: `${{ secrets.DEV_FE_DIST_DIR }}`
 
       - name: Install SSH key
         run: |
@@ -86,7 +84,6 @@ jobs:
             Репозиторий: `${{ github.repository }}`
             Ветка: `${{ github.ref }}`
             🔗 [Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            📁 FE_DIST: `${{ secrets.DEV_FE_DIST_DIR }}`
 
       - name: Notify Failure
         if: failure()
@@ -101,7 +98,6 @@ jobs:
             Ветка: `${{ github.ref }}`
             Автор: `${{ github.actor }}`
             🔗 [Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            📁 FE_DIST: `${{ secrets.DEV_FE_DIST_DIR }}`
 
       - name: Cleanup
         run: rm -rf ~/.ssh
