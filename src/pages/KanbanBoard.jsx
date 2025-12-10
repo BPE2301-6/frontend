@@ -60,17 +60,23 @@ function TaskCard({ task, statuses, onEdit, onMove, onDelete }) {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <select
-          className="bg-[#242528] border border-[#1E80D9] text-white text-sm rounded-lg px-3 py-2 focus:outline-none"
-          value={task.status_id}
-          onChange={(e) => onMove(task.id, e.target.value)}
-        >
-          {statuses.map((status) => (
-            <option key={status.id} value={status.id}>
-              {status.name}
-            </option>
-          ))}
-        </select>
+        {statuses.length > 0 ? (
+          <select
+            className="bg-[#242528] border border-[#1E80D9] text-white text-sm rounded-lg px-3 py-2 focus:outline-none"
+            value={task.status_id}
+            onChange={(e) => onMove(task.id, e.target.value)}
+          >
+            {statuses.map((status) => (
+              <option key={status.id} value={status.id}>
+                {status.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="text-red-500 text-sm">
+            Невозможно создать задачу без колонок. Создайте колонку сначала.
+          </span>
+        )}
         <button
           className="px-3 py-2 bg-[#1E80D9] text-white text-sm rounded-lg hover:bg-[#166bb7] transition"
           onClick={() => onEdit(task)}
