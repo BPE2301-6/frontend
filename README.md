@@ -45,7 +45,7 @@ make dev
 
 ```
 VITE_API_URL=http://localhost:3000
-VITE_DEFAULT_PROJECT_ID=00000000-0000-0000-0000-000000000000
+VITE_DEFAULT_PROJECT_ID=123e4567-e89b-12d3-a456-426614174000 # замените на реальный id проекта из вашего бэкенда
 ```
 
 ## Структура каталогов
