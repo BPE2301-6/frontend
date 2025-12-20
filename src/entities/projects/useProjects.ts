@@ -1,44 +1,55 @@
 import { useEffect, useState } from 'react';
-import { projectsApi } from '@shared/api/projects';
+import {
+  projectsApi,
+  ProjectsQueryParams,
+} from '@shared/api/projects';
 import { ApiError } from '@shared/api/httpClient';
+import {
+  Project,
+  ProjectCreatePayload,
+  ProjectUpdatePayload,
+} from '@shared/api/types';
 
-export function useProjects(initialFilters = {}) {
-  const [projects, setProjects] = useState([]);
-  const [filters, setFilters] = useState(initialFilters);
+export function useProjects(initialFilters: ProjectsQueryParams = {}) {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [filters, setFilters] = useState<ProjectsQueryParams>(initialFilters);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await projectsApi.list(filters);
-      setProjects(res?.items || res || []);
+      setProjects(res?.items || []);
     } catch (err) {
-      setError(err);
+      setError(err as Error);
     } finally {
       setLoading(false);
     }
   };
 
-  const createProject = async (payload) => {
+  const createProject = async (payload: ProjectCreatePayload) => {
     setError(null);
     try {
       await projectsApi.create(payload);
       await load();
     } catch (err) {
-      setError(err);
+      setError(err as Error);
       throw err;
     }
   };
 
-  const updateProject = async (projectId, payload) => {
+  const updateProject = async (
+    projectId: string,
+    payload: ProjectUpdatePayload
+  ) => {
     setError(null);
     try {
       await projectsApi.update(projectId, payload);
       await load();
     } catch (err) {
-      setError(err);
+      setError(err as Error);
       throw err;
     }
   };
@@ -57,8 +68,7 @@ export function useProjects(initialFilters = {}) {
     reload: load,
     createProject,
     updateProject,
-    isApiError: (err) => err instanceof ApiError,
+    isApiError: (err: unknown): err is ApiError => err instanceof ApiError,
   };
 }
-
 

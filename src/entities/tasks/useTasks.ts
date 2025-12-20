@@ -5,14 +5,23 @@ import {
   updateTask as updateTaskApi,
   deleteTask as deleteTaskApi,
   moveTask as moveTaskApi,
+  TasksQueryParams,
 } from '@shared/api/tasks';
 import { ApiError } from '@shared/api/httpClient';
+import {
+  Task,
+  TaskCreatePayload,
+  TaskUpdatePayload,
+} from '@shared/api/types';
 
-export function useTasks(projectId, initialFilters = {}) {
-  const [data, setData] = useState([]);
+export function useTasks(
+  projectId: string | null,
+  initialFilters: TasksQueryParams = {}
+) {
+  const [data, setData] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [filters, setFilters] = useState(initialFilters);
+  const [error, setError] = useState<Error | null>(null);
+  const [filters, setFilters] = useState<TasksQueryParams>(initialFilters);
 
   const load = async () => {
     if (!projectId) return;
@@ -22,53 +31,53 @@ export function useTasks(projectId, initialFilters = {}) {
       const res = await fetchTasks(projectId, { ...filters, limit: 200 });
       setData(res?.items || []);
     } catch (err) {
-      setError(err);
+      setError(err as Error);
     } finally {
       setLoading(false);
     }
   };
 
-  const createTask = async (payload) => {
+  const createTask = async (payload: TaskCreatePayload) => {
     if (!projectId) return;
     setError(null);
     try {
       await createTaskApi(projectId, payload);
       await load();
     } catch (err) {
-      setError(err);
+      setError(err as Error);
       throw err;
     }
   };
 
-  const updateTask = async (taskId, payload) => {
+  const updateTask = async (taskId: string, payload: TaskUpdatePayload) => {
     setError(null);
     try {
       await updateTaskApi(taskId, payload);
       await load();
     } catch (err) {
-      setError(err);
+      setError(err as Error);
       throw err;
     }
   };
 
-  const moveTask = async (taskId, statusId) => {
+  const moveTask = async (taskId: string, statusId: string) => {
     setError(null);
     try {
       await moveTaskApi(taskId, statusId);
       await load();
     } catch (err) {
-      setError(err);
+      setError(err as Error);
       throw err;
     }
   };
 
-  const deleteTask = async (taskId) => {
+  const deleteTask = async (taskId: string) => {
     setError(null);
     try {
       await deleteTaskApi(taskId);
       await load();
     } catch (err) {
-      setError(err);
+      setError(err as Error);
       throw err;
     }
   };
@@ -89,8 +98,7 @@ export function useTasks(projectId, initialFilters = {}) {
     updateTask,
     deleteTask,
     moveTask,
-    isApiError: (err) => err instanceof ApiError,
+    isApiError: (err: unknown): err is ApiError => err instanceof ApiError,
   };
 }
-
 
