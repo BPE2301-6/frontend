@@ -105,7 +105,7 @@ export default function Login() {
             maxWidth: '350px',
             height: '80px',
             minWidth: '250px',
-            backgroundColor: '#FF8800',
+            backgroundColor: '#1E80D9',
             borderRadius: '9999px',
             fontSize: 'clamp(42px, 4.5vw, 56px)',
             paddingTop: '4px',
@@ -118,27 +118,27 @@ export default function Login() {
           }}
           onMouseEnter={(e) => {
             if (!loading) {
-              e.currentTarget.style.backgroundColor = '#E67700';
-              e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 136, 0, 0.6)';
+              e.currentTarget.style.backgroundColor = '#166BB7';
+              e.currentTarget.style.boxShadow = '0 0 20px rgba(30, 128, 217, 0.6), 0 0 30px rgba(30, 128, 217, 0.4)';
               e.currentTarget.style.transform = 'scale(1.05)';
             }
           }}
           onMouseLeave={(e) => {
             if (!loading) {
-              e.currentTarget.style.backgroundColor = '#FF8800';
+              e.currentTarget.style.backgroundColor = '#1E80D9';
               e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
               e.currentTarget.style.transform = 'scale(1)';
             }
           }}
           onMouseDown={(e) => {
             if (!loading) {
-              e.currentTarget.style.backgroundColor = '#CC6600';
+              e.currentTarget.style.backgroundColor = '#145A9E';
               e.currentTarget.style.transform = 'scale(1)';
             }
           }}
           onMouseUp={(e) => {
             if (!loading) {
-              e.currentTarget.style.backgroundColor = '#E67700';
+              e.currentTarget.style.backgroundColor = '#166BB7';
               e.currentTarget.style.transform = 'scale(1.05)';
             }
           }}
