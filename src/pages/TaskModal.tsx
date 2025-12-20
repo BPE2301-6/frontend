@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, ChangeEvent, FormEvent } from 'react';
 import { useUsers } from '@entities/users/useUsers';
+import { Task, Status, TaskCreatePayload } from '@shared/api/types';
 
 const priorityOptions = [
   { value: 'HIGH', label: 'Высокий' },
@@ -7,7 +8,19 @@ const priorityOptions = [
   { value: 'LOW', label: 'Низкий' },
 ];
 
-const defaultForm = {
+interface TaskForm {
+  title: string;
+  description: string;
+  priority: string;
+  status_id: string;
+  reporter_id: string;
+  assignee_id: string;
+  due_date: string;
+  tag_ids: string;
+  comment: string;
+}
+
+const defaultForm: TaskForm = {
   title: '',
   description: '',
   priority: 'MEDIUM',
@@ -19,8 +32,17 @@ const defaultForm = {
   comment: '',
 };
 
-function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
-  const [form, setForm] = useState(defaultForm);
+interface TaskModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (payload: TaskCreatePayload) => void;
+  statuses: Status[];
+  task: Task | null;
+  isSaving: boolean;
+}
+
+export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }: TaskModalProps) {
+  const [form, setForm] = useState<TaskForm>(defaultForm);
   const { users, loading: usersLoading } = useUsers({ limit: 50 });
 
   const firstStatusId = useMemo(
@@ -50,12 +72,12 @@ function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
 
   if (!isOpen) return null;
 
-  const handleChange = (field) => (event) => {
+  const handleChange = (field: keyof TaskForm) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { value } = event.target;
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const statusId = form.status_id || firstStatusId;
     if (!statusId) {
@@ -63,12 +85,12 @@ function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
       return;
     }
 
-    const payload = {
+    const payload: TaskCreatePayload = {
       title: form.title.trim(),
-      description: form.description.trim(),
-      priority: form.priority || 'MEDIUM',
+      description: form.description.trim() || null,
+      priority: form.priority as 'HIGH' | 'MEDIUM' | 'LOW',
       status_id: statusId,
-      reporter_id: form.reporter_id || null,
+      reporter_id: form.reporter_id || '',
       assignee_id: form.assignee_id || null,
       due_date: form.due_date || null,
     };
@@ -82,9 +104,10 @@ function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
       payload.tag_ids = tags;
     }
 
-    if (form.comment.trim()) {
-      payload.comment = form.comment.trim();
-    }
+    // Комментарий обрабатывается отдельно после создания задачи
+    // if (form.comment.trim()) {
+    //   payload.comment = form.comment.trim();
+    // }
 
     onSave(payload);
   };
@@ -261,4 +284,3 @@ function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }) {
   );
 }
 
-export default TaskModal;

@@ -3,20 +3,22 @@ import { useSearchParams } from 'react-router-dom';
 import TaskModal from './TaskModal';
 import { useStatuses } from '@entities/statuses/useStatuses';
 import { useTasks } from '@entities/tasks/useTasks';
+import { Task, Status, TaskCreatePayload } from '@shared/api/types';
+import { ApiError } from '@shared/api/httpClient';
 
-const PRIORITY_COLOR = {
+const PRIORITY_COLOR: Record<string, string> = {
   HIGH: 'bg-[#FD5353]',
   MEDIUM: 'bg-[#FDD253]',
   LOW: 'bg-[#62C53E]',
 };
 
-const PRIORITY_LABEL = {
+const PRIORITY_LABEL: Record<string, string> = {
   HIGH: 'Высокий',
   MEDIUM: 'Средний',
   LOW: 'Низкий',
 };
 
-const formatDate = (value) => {
+const formatDate = (value: string | null | undefined): string => {
   if (!value) return 'Без срока';
   try {
     const date = new Date(value);
@@ -26,7 +28,15 @@ const formatDate = (value) => {
   }
 };
 
-function TaskCard({ task, statuses, onEdit, onMove, onDelete }) {
+interface TaskCardProps {
+  task: Task;
+  statuses: Status[];
+  onEdit: (task: Task) => void;
+  onMove: (taskId: string, statusId: string) => void;
+  onDelete: (taskId: string) => void;
+}
+
+function TaskCard({ task, statuses, onEdit, onMove, onDelete }: TaskCardProps) {
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
 
   return (
@@ -94,15 +104,14 @@ function TaskCard({ task, statuses, onEdit, onMove, onDelete }) {
   );
 }
 
-function KanbanBoard() {
+export default function KanbanBoard() {
   const [searchParams] = useSearchParams();
-  const projectId =
-    searchParams.get('projectId') || import.meta.env.VITE_DEFAULT_PROJECT_ID;
+  const projectId = searchParams.get('projectId') || null;
 
-  const [filters, setFilters] = useState({ q: '' });
+  const [filters, setFilters] = useState<{ q: string }>({ q: '' });
   const [newStatusName, setNewStatusName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTask, setModalTask] = useState(null);
+  const [modalTask, setModalTask] = useState<Task | null>(null);
 
   const {
     statuses,
@@ -126,7 +135,7 @@ function KanbanBoard() {
   } = useTasks(projectId, filters);
 
   const tasksByStatus = useMemo(() => {
-    const grouped = {};
+    const grouped: Record<string, Task[]> = {};
     statuses.forEach((status) => {
       grouped[status.id] = [];
     });
@@ -138,7 +147,7 @@ function KanbanBoard() {
     return grouped;
   }, [statuses, tasks]);
 
-  const handleSaveTask = async (payload) => {
+  const handleSaveTask = async (payload: TaskCreatePayload) => {
     if (!projectId) return;
     try {
       if (modalTask?.id) {
@@ -150,29 +159,32 @@ function KanbanBoard() {
       setModalTask(null);
     } catch (err) {
       const message =
-        (isTaskApiError(err) && err.payload?.message) || err.message || 'Ошибка сохранения';
+        (isTaskApiError(err) && (err as ApiError).payload?.message) || 
+        (err instanceof Error ? err.message : 'Ошибка сохранения');
       alert(message);
     }
   };
 
-  const handleMoveTask = async (taskId, statusId) => {
+  const handleMoveTask = async (taskId: string, statusId: string) => {
     try {
       await moveTask(taskId, statusId);
     } catch (err) {
       const message =
-        (isTaskApiError(err) && err.payload?.message) || err.message || 'Ошибка переноса';
+        (isTaskApiError(err) && (err as ApiError).payload?.message) || 
+        (err instanceof Error ? err.message : 'Ошибка переноса');
       alert(message);
     }
   };
 
-  const handleDeleteTask = async (taskId) => {
+  const handleDeleteTask = async (taskId: string) => {
     const confirmed = window.confirm('Удалить задачу?');
     if (!confirmed) return;
     try {
       await deleteTask(taskId);
     } catch (err) {
       const message =
-        (isTaskApiError(err) && err.payload?.message) || err.message || 'Ошибка удаления';
+        (isTaskApiError(err) && (err as ApiError).payload?.message) || 
+        (err instanceof Error ? err.message : 'Ошибка удаления');
       alert(message);
     }
   };
@@ -189,12 +201,13 @@ function KanbanBoard() {
       setNewStatusName('');
     } catch (err) {
       const message =
-        (isStatusApiError(err) && err.payload?.message) || err.message || 'Ошибка создания колонки';
+        (isStatusApiError(err) && (err as ApiError).payload?.message) || 
+        (err instanceof Error ? err.message : 'Ошибка создания колонки');
       alert(message);
     }
   };
 
-  const handleDeleteStatus = async (statusId) => {
+  const handleDeleteStatus = async (statusId: string) => {
     const hasTasks = tasks.some((task) => task.status_id === statusId);
     if (hasTasks) {
       alert('Нельзя удалить статус с задачами.');
@@ -206,18 +219,19 @@ function KanbanBoard() {
       await deleteStatus(statusId);
     } catch (err) {
       const message =
-        (isStatusApiError(err) && err.payload?.message) || err.message || 'Ошибка удаления колонки';
+        (isStatusApiError(err) && (err as ApiError).payload?.message) || 
+        (err instanceof Error ? err.message : 'Ошибка удаления колонки');
       alert(message);
     }
   };
 
-  const handleOpenModal = (task = null) => {
+  const handleOpenModal = (task: Task | null = null) => {
     setModalTask(task);
     setIsModalOpen(true);
   };
 
   const projectHint =
-    'Добавьте ?projectId=<uuid> к адресу или задайте VITE_DEFAULT_PROJECT_ID в .env';
+    'Добавьте ?projectId=<uuid> к адресу';
 
   if (!projectId) {
     return (
@@ -355,4 +369,3 @@ function KanbanBoard() {
   );
 }
 
-export default KanbanBoard;
