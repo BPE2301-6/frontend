@@ -1,3 +1,14 @@
+import { ButtonHTMLAttributes, ReactNode } from 'react';
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children?: ReactNode;
+  variant?: 'primary' | 'secondary' | 'error' | 'outline';
+  size?: 'small' | 'default';
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: string;
+}
+
 function Button({
   children = '+',
   variant = 'primary',
@@ -6,7 +17,7 @@ function Button({
   onClick = () => {},
   className = '',
   ...props
-}) {
+}: ButtonProps) {
   const baseClasses =
     'font-montserrat font-bold flex items-center justify-center transition-all duration-200';
 
@@ -25,7 +36,9 @@ function Button({
       'bg-transparent border border-figma-white text-figma-white hover:bg-figma-white hover:text-figma-bg',
   };
 
-  const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer';
+  const disabledClasses = disabled
+    ? 'opacity-50 cursor-not-allowed'
+    : 'cursor-pointer';
 
   return (
     <button
@@ -40,3 +53,4 @@ function Button({
 }
 
 export default Button;
+

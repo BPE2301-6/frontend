@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react';
-import { usersApi } from '@shared/api/users';
+import { usersApi, UsersQueryParams } from '@shared/api/users';
 import { ApiError } from '@shared/api/httpClient';
+import { User } from '@shared/api/types';
 
-export function useUsers(initialFilters = {}) {
-  const [users, setUsers] = useState([]);
-  const [filters, setFilters] = useState(initialFilters);
+export function useUsers(initialFilters: UsersQueryParams = {}) {
+  const [users, setUsers] = useState<User[]>([]);
+  const [filters, setFilters] = useState<UsersQueryParams>(initialFilters);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await usersApi.list(filters);
-      setUsers(res?.items || res || []);
+      setUsers(res?.items || []);
     } catch (err) {
-      setError(err);
+      setError(err as Error);
     } finally {
       setLoading(false);
     }
@@ -33,8 +34,7 @@ export function useUsers(initialFilters = {}) {
     filters,
     setFilters,
     reload: load,
-    isApiError: (err) => err instanceof ApiError,
+    isApiError: (err: unknown): err is ApiError => err instanceof ApiError,
   };
 }
-
 

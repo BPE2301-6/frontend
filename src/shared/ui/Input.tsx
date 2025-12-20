@@ -1,3 +1,14 @@
+import { InputHTMLAttributes } from 'react';
+
+interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  placeholder?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: boolean;
+  disabled?: boolean;
+  className?: string;
+}
+
 function Input({
   placeholder = '',
   value = '',
@@ -6,7 +17,7 @@ function Input({
   disabled = false,
   className = '',
   ...props
-}) {
+}: InputProps) {
   const baseClasses =
     'w-figma-input-width h-figma-input-height border rounded-figma-input px-12 flex items-center font-montserrat font-light text-figma-input-text text-figma-white leading-[59px]';
 
@@ -55,3 +66,4 @@ function Input({
 }
 
 export default Input;
+

@@ -17,3 +17,16 @@ body,
   margin: 0;
   padding: 0;
 }
+
+/* Large placeholder text for inputs */
+input::placeholder {
+  font-size: clamp(36px, 3.5vw, 44px) !important;
+  color: #D1D5DB;
+  font-weight: 300;
+}
+
+input[type="email"]::placeholder,
+input[type="text"]::placeholder,
+input[type="password"]::placeholder {
+  font-size: clamp(36px, 3.5vw, 44px) !important;
+}

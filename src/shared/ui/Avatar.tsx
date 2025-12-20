@@ -1,4 +1,11 @@
-function Avatar({ size = 'default', className = '', ...props }) {
+import { HTMLAttributes } from 'react';
+
+interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
+  size?: 'small' | 'default' | 'large';
+  className?: string;
+}
+
+function Avatar({ size = 'default', className = '', ...props }: AvatarProps) {
   const sizeClasses = {
     small: 'w-8 h-8',
     default: 'w-figma-avatar-size h-figma-avatar-size',
@@ -16,3 +23,4 @@ function Avatar({ size = 'default', className = '', ...props }) {
 }
 
 export default Avatar;
+
