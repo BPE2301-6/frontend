@@ -21,13 +21,13 @@ export interface PaginatedComments {
 
 export const commentsApi = {
   list: (taskId: string, query: { limit?: number; offset?: number } = {}): Promise<PaginatedComments> =>
-    httpRequest<PaginatedComments>(`/tasks/${taskId}/comments`, { query }),
+    httpRequest<PaginatedComments>(`/api/v1/tasks/${taskId}/comments`, { query }),
   create: (taskId: string, payload: CommentCreatePayload): Promise<Comment> =>
-    httpRequest<Comment>(`/tasks/${taskId}/comments`, {
+    httpRequest<Comment>(`/api/v1/tasks/${taskId}/comments`, {
       method: 'POST',
       body: payload,
     }),
   delete: (commentId: string): Promise<null> =>
-    httpRequest<null>(`/comments/${commentId}`, { method: 'DELETE' }),
+    httpRequest<null>(`/api/v1/comments/${commentId}`, { method: 'DELETE' }),
 };
 

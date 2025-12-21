@@ -32,13 +32,8 @@ interface QueryParams {
 }
 
 const buildUrl = (path: string, query?: QueryParams): string => {
-  // Убеждаемся, что путь начинается с /api/v1
-  const normalizedPath = path.startsWith('/api/v1') 
-    ? path 
-    : path.startsWith('/') 
-      ? `/api/v1${path}` 
-      : `/api/v1/${path}`;
-  
+  // Путь должен быть полным (уже содержать /api/v1)
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
   const url = new URL(normalizedPath, base);
 

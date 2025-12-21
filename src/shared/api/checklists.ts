@@ -27,26 +27,26 @@ export type ChecklistItemUpdatePayload = Partial<{
 
 export const checklistsApi = {
   list: (taskId: string): Promise<Checklist[]> =>
-    httpRequest<Checklist[]>(`/tasks/${taskId}/checklists`),
+    httpRequest<Checklist[]>(`/api/v1/tasks/${taskId}/checklists`),
   create: (taskId: string): Promise<Checklist> =>
-    httpRequest<Checklist>(`/tasks/${taskId}/checklists`, {
+    httpRequest<Checklist>(`/api/v1/tasks/${taskId}/checklists`, {
       method: 'POST',
     }),
   delete: (checklistId: string): Promise<null> =>
-    httpRequest<null>(`/checklists/${checklistId}`, { method: 'DELETE' }),
+    httpRequest<null>(`/api/v1/checklists/${checklistId}`, { method: 'DELETE' }),
   getItems: (checklistId: string): Promise<ChecklistItem[]> =>
-    httpRequest<ChecklistItem[]>(`/checklists/${checklistId}/items`),
+    httpRequest<ChecklistItem[]>(`/api/v1/checklists/${checklistId}/items`),
   createItem: (checklistId: string, payload: ChecklistItemCreatePayload): Promise<ChecklistItem> =>
-    httpRequest<ChecklistItem>(`/checklists/${checklistId}/items`, {
+    httpRequest<ChecklistItem>(`/api/v1/checklists/${checklistId}/items`, {
       method: 'POST',
       body: payload,
     }),
   updateItem: (itemId: string, payload: ChecklistItemUpdatePayload): Promise<ChecklistItem> =>
-    httpRequest<ChecklistItem>(`/checklist-items/${itemId}`, {
+    httpRequest<ChecklistItem>(`/api/v1/checklist-items/${itemId}`, {
       method: 'PATCH',
       body: payload,
     }),
   deleteItem: (itemId: string): Promise<null> =>
-    httpRequest<null>(`/checklist-items/${itemId}`, { method: 'DELETE' }),
+    httpRequest<null>(`/api/v1/checklist-items/${itemId}`, { method: 'DELETE' }),
 };
 

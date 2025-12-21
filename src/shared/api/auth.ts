@@ -31,12 +31,12 @@ export interface LoginResponse {
 
 export const authApi = {
   register: (payload: RegisterPayload): Promise<RegisterResponse> =>
-    httpRequest<RegisterResponse>('/auth/register', {
+    httpRequest<RegisterResponse>('/api/v1/auth/register', {
       method: 'POST',
       body: payload,
     }),
   login: (payload: LoginPayload): Promise<LoginResponse> =>
-    httpRequest<LoginResponse>('/auth/login', {
+    httpRequest<LoginResponse>('/api/v1/auth/login', {
       method: 'POST',
       body: payload,
     }),
