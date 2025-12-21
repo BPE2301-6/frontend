@@ -9,8 +9,8 @@ export interface UsersQueryParams {
 
 export const usersApi = {
   list: (query: UsersQueryParams = {}): Promise<PaginatedUsers> =>
-    httpRequest<PaginatedUsers>('/api/v1/users', { query }),
+    httpRequest<PaginatedUsers>('/users', { query }),
   getById: (userId: string): Promise<User> =>
-    httpRequest<User>(`/api/v1/users/${userId}`),
+    httpRequest<User>(`/users/${userId}`),
 };
 
