@@ -10,13 +10,14 @@ export interface ProjectsQueryParams {
   search?: string;
   limit?: number;
   offset?: number;
+  [key: string]: string | number | boolean | string[] | undefined | null;
 }
 
 export const projectsApi = {
   create: (payload: ProjectCreatePayload): Promise<Project> =>
     httpRequest<Project>('/api/v1/projects', { method: 'POST', body: payload }),
   list: (query: ProjectsQueryParams = {}): Promise<PaginatedProjects> =>
-    httpRequest<PaginatedProjects>('/api/v1/projects', { query }),
+    httpRequest<PaginatedProjects>('/api/v1/projects', { query: query as Record<string, string | number | boolean | string[] | undefined | null> }),
   getById: (projectId: string): Promise<Project> =>
     httpRequest<Project>(`/api/v1/projects/${projectId}`),
   update: (projectId: string, payload: ProjectUpdatePayload): Promise<Project> =>

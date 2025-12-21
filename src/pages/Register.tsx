@@ -40,7 +40,7 @@ export default function Register() {
       await register(email, password, name);
       // После регистрации автоматически логинимся
       await login(email, password);
-      navigate('/board');
+      navigate('/projects');
     } catch (err) {
       console.error('Register error:', err);
     }
@@ -53,7 +53,7 @@ export default function Register() {
         className="font-bold leading-tight mt-8 sm:mt-12"
         style={{ 
           fontSize: 'clamp(56px, 7vw, 80px)',
-          color: '#1E80D9',
+          color: '#FF8800',
           marginBottom: 'clamp(50px, 7vw, 20px)',
         }}
       >
@@ -204,8 +204,8 @@ export default function Register() {
         style={{ 
           fontSize: 'clamp(28px, 2.5vw, 36px)',
           marginTop: '30px',
-          color: hoverLink ? '#FF8800' : '#FFFFFF',
-          textShadow: hoverLink ? '0 0 15px rgba(255, 136, 0, 0.8), 0 0 25px rgba(255, 136, 0, 0.5)' : 'none',
+          color: hoverLink ? '#1E80D9' : '#FFFFFF',
+          textShadow: hoverLink ? '0 0 15px rgba(30, 128, 217, 0.8), 0 0 25px rgba(30, 128, 217, 0.5)' : 'none',
           transition: 'color 0.4s ease, text-shadow 0.4s ease',
         }}
       >

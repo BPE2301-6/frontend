@@ -3,6 +3,7 @@ import App from './App';
 import Welcome from '../pages/Welcome';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import ProjectSelection from '../pages/ProjectSelection';
 import KanbanBoard from '../pages/KanbanBoard';
 
 export const router = createBrowserRouter([
@@ -13,6 +14,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <Welcome /> }, // главная страница
       { path: '/login', element: <Login /> }, // страница входа
       { path: '/register', element: <Register /> }, // страница регистрации
+      { path: '/projects', element: <ProjectSelection /> }, // выбор проекта
       { path: '/board', element: <KanbanBoard /> }, // экран доски
     ],
   },

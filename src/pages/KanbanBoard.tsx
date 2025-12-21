@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import TaskModal from './TaskModal';
 import { useStatuses } from '@entities/statuses/useStatuses';
 import { useTasks } from '@entities/tasks/useTasks';
@@ -105,8 +105,15 @@ function TaskCard({ task, statuses, onEdit, onMove, onDelete }: TaskCardProps) {
 }
 
 export default function KanbanBoard() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get('projectId') || null;
+
+  useEffect(() => {
+    if (!projectId) {
+      navigate('/projects');
+    }
+  }, [projectId, navigate]);
 
   const [filters, setFilters] = useState<{ q: string }>({ q: '' });
   const [newStatusName, setNewStatusName] = useState('');
@@ -230,18 +237,8 @@ export default function KanbanBoard() {
     setIsModalOpen(true);
   };
 
-  const projectHint =
-    'Добавьте ?projectId=<uuid> к адресу';
-
   if (!projectId) {
-    return (
-      <div className="min-h-screen bg-[#242528] text-white flex items-center justify-center">
-        <div className="space-y-2 text-center">
-          <div className="text-xl font-semibold">Не указан projectId</div>
-          <div className="text-sm text-[#A1A1A4]">{projectHint}</div>
-        </div>
-      </div>
-    );
+    return null; // Перенаправление происходит через useEffect
   }
 
   return (
