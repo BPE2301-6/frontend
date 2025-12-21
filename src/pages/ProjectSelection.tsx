@@ -5,12 +5,12 @@ import { useAuthStore } from '@entities/auth/useAuthStore';
 import { ProjectCreatePayload } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
 
-type ViewMode = 'search' | 'create';
+type ViewMode = 'search' | 'create' | null;
 
 export default function ProjectSelection() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
-  const [viewMode, setViewMode] = useState<ViewMode>('search');
+  const [viewMode, setViewMode] = useState<ViewMode>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProject, setNewProject] = useState({
@@ -80,8 +80,20 @@ export default function ProjectSelection() {
 
   const handleCloseModal = () => {
     setShowCreateModal(false);
+    setViewMode(null);
     setNewProject({ key: '', name: '', description: '' });
     setCreateError('');
+  };
+
+  const handleCreateButtonClick = () => {
+    if (showCreateModal) {
+      // Второе нажатие - закрываем модальное окно
+      handleCloseModal();
+    } else {
+      // Первое нажатие - открываем модальное окно
+      setViewMode('create');
+      setShowCreateModal(true);
+    }
   };
 
   return (
@@ -141,32 +153,29 @@ export default function ProjectSelection() {
 
           {/* Создать проект - справа, оранжевая */}
           <button
-            onClick={() => {
-              setViewMode('create');
-              setShowCreateModal(true);
-            }}
+            onClick={handleCreateButtonClick}
             className="font-medium leading-tight lowercase text-white flex-shrink-0"
             style={{
               width: 'clamp(200px, 27vw, 434px)',
               height: '80px',
               borderRadius: '9999px',
-              backgroundColor: viewMode === 'create' ? '#E67700' : '#FF8800',
-              boxShadow: viewMode === 'create' ? '0 0 20px rgba(255, 136, 0, 0.6), 0 0 30px rgba(255, 136, 0, 0.4)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
-              transform: viewMode === 'create' ? 'scale(1.05)' : 'scale(1)',
+              backgroundColor: showCreateModal ? '#E67700' : '#FF8800',
+              boxShadow: showCreateModal ? '0 0 20px rgba(255, 136, 0, 0.6), 0 0 30px rgba(255, 136, 0, 0.4)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
+              transform: showCreateModal ? 'scale(1.05)' : 'scale(1)',
               fontSize: 'clamp(28px, 3.5vw, 52px)',
               border: 'none',
               cursor: 'pointer',
               transition: 'background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
             }}
             onMouseEnter={(e) => {
-              if (viewMode !== 'create') {
+              if (!showCreateModal) {
                 e.currentTarget.style.backgroundColor = '#E67700';
                 e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 136, 0, 0.6)';
                 e.currentTarget.style.transform = 'scale(1.05)';
               }
             }}
             onMouseLeave={(e) => {
-              if (viewMode !== 'create') {
+              if (!showCreateModal) {
                 e.currentTarget.style.backgroundColor = '#FF8800';
                 e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
                 e.currentTarget.style.transform = 'scale(1)';
@@ -189,7 +198,7 @@ export default function ProjectSelection() {
             <form
               onSubmit={handleSearch}
               className="flex flex-col items-center w-full mb-8"
-              style={{ maxWidth: '750px' }}
+              style={{ maxWidth: '750px', marginTop: '30px' }}
             >
               <div className="flex flex-row items-center w-full gap-4">
                 <input
@@ -205,7 +214,6 @@ export default function ProjectSelection() {
                     paddingLeft: 'clamp(32px, 4vw, 48px)',
                     paddingRight: 'clamp(32px, 4vw, 48px)',
                     backgroundColor: '#2A2D31',
-                    marginBottom: '30px',
                   }}
                 />
                 <button
@@ -220,7 +228,6 @@ export default function ProjectSelection() {
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
-                    marginBottom: '30px',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#166BB7';
@@ -339,32 +346,22 @@ export default function ProjectSelection() {
           onClick={handleCloseModal}
         >
           <div
-            className="bg-[#242528] border-2 border-[#1E80D9] rounded-3xl p-8 sm:p-10 md:p-12 w-full max-w-4xl mx-4 relative"
+            className="bg-[#242528] border-2 border-[#1E80D9] rounded-3xl p-8 sm:p-10 md:p-12 relative"
             style={{
-              maxHeight: '90vh',
-              overflowY: 'auto',
+              width: '100%',
+              maxWidth: '750px',
+              minWidth: '320px',
+              margin: '20px',
+              animation: 'fadeIn 0.3s ease-in-out',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Кнопка закрытия */}
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-4 right-4 text-white hover:text-[#FF8800] transition-colors duration-200"
-              style={{
-                fontSize: 'clamp(32px, 4vw, 48px)',
-                width: 'clamp(40px, 5vw, 60px)',
-                height: 'clamp(40px, 5vw, 60px)',
-                lineHeight: '1',
-              }}
-            >
-              ×
-            </button>
 
             {/* Заголовок */}
             <h2
               className="font-bold leading-tight mb-8 text-center"
               style={{
-                fontSize: 'clamp(36px, 4vw, 56px)',
+                fontSize: 'clamp(36px, 4vw, 48px)',
                 color: '#FF8800',
               }}
             >
@@ -384,7 +381,7 @@ export default function ProjectSelection() {
                 style={{
                   height: 'clamp(70px, 8vw, 90px)',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(28px, 3vw, 40px)',
+                  fontSize: 'clamp(28px, 3vw, 36px)',
                   paddingLeft: 'clamp(32px, 4vw, 48px)',
                   paddingRight: 'clamp(32px, 4vw, 48px)',
                   backgroundColor: '#2A2D31',
@@ -403,7 +400,7 @@ export default function ProjectSelection() {
                 style={{
                   height: 'clamp(70px, 8vw, 90px)',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(28px, 3vw, 40px)',
+                  fontSize: 'clamp(28px, 3vw, 36px)',
                   paddingLeft: 'clamp(32px, 4vw, 48px)',
                   paddingRight: 'clamp(32px, 4vw, 48px)',
                   backgroundColor: '#2A2D31',
@@ -418,10 +415,10 @@ export default function ProjectSelection() {
                 onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
                 className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200"
                 style={{
-                  minHeight: 'clamp(120px, 15vw, 180px)',
+                  minHeight: 'clamp(100px, 12vw, 150px)',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(24px, 2.5vw, 36px)',
-                  padding: 'clamp(24px, 3vw, 40px)',
+                  fontSize: 'clamp(24px, 2.5vw, 32px)',
+                  padding: 'clamp(24px, 3vw, 36px)',
                   backgroundColor: '#2A2D31',
                   marginBottom: '30px',
                   resize: 'vertical',
