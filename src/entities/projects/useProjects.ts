@@ -29,11 +29,12 @@ export function useProjects(initialFilters: ProjectsQueryParams = {}) {
     }
   };
 
-  const createProject = async (payload: ProjectCreatePayload) => {
+  const createProject = async (payload: ProjectCreatePayload): Promise<Project> => {
     setError(null);
     try {
-      await projectsApi.create(payload);
+      const createdProject = await projectsApi.create(payload);
       await load();
+      return createdProject;
     } catch (err) {
       setError(err as Error);
       throw err;
