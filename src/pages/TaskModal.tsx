@@ -39,9 +39,10 @@ interface TaskModalProps {
   statuses: Status[];
   task: Task | null;
   isSaving: boolean;
+  defaultStatusId?: string | null;
 }
 
-export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving }: TaskModalProps) {
+export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId }: TaskModalProps) {
   const [form, setForm] = useState<TaskForm>(defaultForm);
   const { users, loading: usersLoading } = useUsers({ limit: 50 });
 
@@ -66,9 +67,10 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
         comment: '',
       });
     } else {
-      setForm({ ...defaultForm, status_id: firstStatusId });
+      const statusId = defaultStatusId || firstStatusId;
+      setForm({ ...defaultForm, status_id: statusId });
     }
-  }, [task, firstStatusId, isOpen]);
+  }, [task, firstStatusId, isOpen, defaultStatusId]);
 
   if (!isOpen) return null;
 

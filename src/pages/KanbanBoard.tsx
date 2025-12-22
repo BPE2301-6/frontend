@@ -3,103 +3,103 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import TaskModal from './TaskModal';
 import { useStatuses } from '@entities/statuses/useStatuses';
 import { useTasks } from '@entities/tasks/useTasks';
-import { Task, Status, TaskCreatePayload } from '@shared/api/types';
+import { useAuthStore } from '@entities/auth/useAuthStore';
+import { projectsApi } from '@shared/api/projects';
+import { Task, Status, TaskCreatePayload, Project } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
 
 const PRIORITY_COLOR: Record<string, string> = {
-  HIGH: 'bg-[#FD5353]',
-  MEDIUM: 'bg-[#FDD253]',
-  LOW: 'bg-[#62C53E]',
-};
-
-const PRIORITY_LABEL: Record<string, string> = {
-  HIGH: 'Высокий',
-  MEDIUM: 'Средний',
-  LOW: 'Низкий',
+  HIGH: '#FD5353',
+  MEDIUM: '#FDD253',
+  LOW: '#62C53E',
 };
 
 const formatDate = (value: string | null | undefined): string => {
-  if (!value) return 'Без срока';
+  if (!value) return '';
   try {
     const date = new Date(value);
-    return date.toLocaleDateString();
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day}.${month}.${year}`;
   } catch {
-    return value;
+    return '';
   }
 };
 
 interface TaskCardProps {
   task: Task;
-  statuses: Status[];
   onEdit: (task: Task) => void;
-  onMove: (taskId: string, statusId: string) => void;
-  onDelete: (taskId: string) => void;
 }
 
-function TaskCard({ task, statuses, onEdit, onMove, onDelete }: TaskCardProps) {
+function TaskCard({ task, onEdit }: TaskCardProps) {
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
 
   return (
-    <div className="bg-[#313236] border border-[#1E80D9] rounded-2xl p-4 space-y-3 shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-lg font-semibold text-white">{task.title}</div>
-          <div className="text-sm text-[#A1A1A4]">
-            {task.description || 'Без описания'}
-          </div>
+    <div
+      className="bg-[#313236] rounded-[32px] p-4 cursor-pointer hover:opacity-90 transition-opacity"
+      onClick={() => onEdit(task)}
+      style={{
+        marginBottom: 'clamp(16px, 2vw, 24px)',
+      }}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <div className="font-medium text-white" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
+          {task.title}
         </div>
-        <span
-          className={`w-4 h-4 rounded-full shrink-0 mt-1 ${priorityColor}`}
-          title={PRIORITY_LABEL[task.priority] || task.priority}
+        <div
+          style={{
+            width: '17px',
+            height: '17px',
+            borderRadius: '50%',
+            backgroundColor: priorityColor,
+            flexShrink: 0,
+            marginLeft: '8px',
+          }}
         />
       </div>
+      
+      {task.description && (
+        <div className="text-[#838486] mb-2" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
+          {task.description}
+        </div>
+      )}
 
-      <div className="flex items-center text-xs text-[#A1A1A4] gap-2 flex-wrap">
-        <span>Приоритет: {PRIORITY_LABEL[task.priority] || '—'}</span>
-        <span className="w-[1px] h-3 bg-[#444]" />
-        <span>Исполнитель: {task.assignee_id || '—'}</span>
-        <span className="w-[1px] h-3 bg-[#444]" />
-        <span>Автор: {task.reporter_id || '—'}</span>
-      </div>
-
-      <div className="flex items-center justify-between text-sm text-[#A1A1A4]">
-        <span>Дедлайн: {formatDate(task.due_date)}</span>
-        <span className="text-[#6AA8FF]">
-          {statuses.find((s) => s.id === task.status_id)?.name || '—'}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {statuses.length > 0 ? (
-          <select
-            className="bg-[#242528] border border-[#1E80D9] text-white text-sm rounded-lg px-3 py-2 focus:outline-none"
-            value={task.status_id}
-            onChange={(e) => onMove(task.id, e.target.value)}
-          >
-            {statuses.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span className="text-red-500 text-sm">
-            Невозможно создать задачу без колонок. Создайте колонку сначала.
-          </span>
+      <div className="flex items-center justify-between mt-3">
+        <div className="text-[#838486]" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
+          {task.key}
+        </div>
+        {task.due_date && (
+          <div className="text-[#838486]" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
+            {formatDate(task.due_date)}
+          </div>
         )}
-        <button
-          className="px-3 py-2 bg-[#1E80D9] text-white text-sm rounded-lg hover:bg-[#166bb7] transition"
-          onClick={() => onEdit(task)}
-        >
-          Редактировать
-        </button>
-        <button
-          className="px-3 py-2 bg-[#FD5353] text-white text-sm rounded-lg hover:bg-[#d94444] transition"
-          onClick={() => onDelete(task.id)}
-        >
-          Удалить
-        </button>
       </div>
+
+      {task.assignee_id && (
+        <div className="flex justify-end mt-3">
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                border: '4px solid #757575',
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -108,24 +108,32 @@ export default function KanbanBoard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const projectId = searchParams.get('projectId') || null;
+  const { user } = useAuthStore();
+  const [project, setProject] = useState<Project | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTask, setModalTask] = useState<Task | null>(null);
+  const [selectedStatusId, setSelectedStatusId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!projectId) {
       navigate('/projects');
+      return;
     }
+    
+    // Загружаем информацию о проекте
+    projectsApi.getById(projectId)
+      .then(setProject)
+      .catch(() => {
+        navigate('/projects');
+      });
   }, [projectId, navigate]);
-
-  const [filters, setFilters] = useState<{ q: string }>({ q: '' });
-  const [newStatusName, setNewStatusName] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTask, setModalTask] = useState<Task | null>(null);
 
   const {
     statuses,
     loading: loadingStatuses,
     error: statusesError,
     createStatus,
-    deleteStatus,
     isApiError: isStatusApiError,
   } = useStatuses(projectId);
 
@@ -139,7 +147,7 @@ export default function KanbanBoard() {
     deleteTask,
     moveTask,
     isApiError: isTaskApiError,
-  } = useTasks(projectId, filters);
+  } = useTasks(projectId, { q: searchQuery });
 
   const tasksByStatus = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
@@ -154,16 +162,26 @@ export default function KanbanBoard() {
     return grouped;
   }, [statuses, tasks]);
 
+  useEffect(() => {
+    if (searchQuery !== undefined) {
+      setTaskFilters({ q: searchQuery });
+    }
+  }, [searchQuery, setTaskFilters]);
+
   const handleSaveTask = async (payload: TaskCreatePayload) => {
     if (!projectId) return;
     try {
       if (modalTask?.id) {
         await updateTask(modalTask.id, payload);
       } else {
-        await createTask(payload);
+        const taskPayload = selectedStatusId 
+          ? { ...payload, status_id: selectedStatusId }
+          : payload;
+        await createTask(taskPayload);
       }
       setIsModalOpen(false);
       setModalTask(null);
+      setSelectedStatusId(null);
     } catch (err) {
       const message =
         (isTaskApiError(err) && (err as ApiError).payload?.message) || 
@@ -172,183 +190,235 @@ export default function KanbanBoard() {
     }
   };
 
-  const handleMoveTask = async (taskId: string, statusId: string) => {
-    try {
-      await moveTask(taskId, statusId);
-    } catch (err) {
-      const message =
-        (isTaskApiError(err) && (err as ApiError).payload?.message) || 
-        (err instanceof Error ? err.message : 'Ошибка переноса');
-      alert(message);
-    }
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    const confirmed = window.confirm('Удалить задачу?');
-    if (!confirmed) return;
-    try {
-      await deleteTask(taskId);
-    } catch (err) {
-      const message =
-        (isTaskApiError(err) && (err as ApiError).payload?.message) || 
-        (err instanceof Error ? err.message : 'Ошибка удаления');
-      alert(message);
-    }
-  };
-
-  const handleAddStatus = async () => {
-    const name = newStatusName.trim();
-    if (!name || !projectId) return;
-    try {
-      await createStatus({
-        name,
-        position: statuses.length,
-        is_closed: false,
-      });
-      setNewStatusName('');
-    } catch (err) {
-      const message =
-        (isStatusApiError(err) && (err as ApiError).payload?.message) || 
-        (err instanceof Error ? err.message : 'Ошибка создания колонки');
-      alert(message);
-    }
-  };
-
-  const handleDeleteStatus = async (statusId: string) => {
-    const hasTasks = tasks.some((task) => task.status_id === statusId);
-    if (hasTasks) {
-      alert('Нельзя удалить статус с задачами.');
-      return;
-    }
-    const confirmed = window.confirm('Удалить колонку?');
-    if (!confirmed) return;
-    try {
-      await deleteStatus(statusId);
-    } catch (err) {
-      const message =
-        (isStatusApiError(err) && (err as ApiError).payload?.message) || 
-        (err instanceof Error ? err.message : 'Ошибка удаления колонки');
-      alert(message);
-    }
-  };
-
-  const handleOpenModal = (task: Task | null = null) => {
+  const handleOpenModal = (task: Task | null = null, statusId: string | null = null) => {
     setModalTask(task);
+    setSelectedStatusId(statusId);
     setIsModalOpen(true);
   };
 
-  if (!projectId) {
-    return null; // Перенаправление происходит через useEffect
+  if (!projectId || !project) {
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-[#242528] text-white px-6 py-6 space-y-6">
-      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Доска проекта</h1>
-          <p className="text-sm text-[#A1A1A4]">
-            projectId: <span className="text-[#6AA8FF]">{projectId}</span>
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 md:flex-row md:items-center">
-          <div className="flex items-center gap-2">
-            <input
-              className="bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
-              placeholder="Поиск по задачам"
-              value={filters.q}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, q: e.target.value }))
-              }
-            />
-            <button
-              className="px-4 py-2 bg-[#1E80D9] rounded-xl hover:bg-[#166bb7] transition text-sm"
-              onClick={() => setTaskFilters((prev) => ({ ...prev, q: filters.q }))}
+    <div className="min-h-screen bg-[#242528] text-white font-montserrat">
+      {/* Верхнее меню */}
+      <header
+        className="w-full border-b border-[#1E80D9]"
+        style={{
+          height: 'clamp(120px, 15vh, 148px)',
+          padding: 'clamp(20px, 3vw, 26px) clamp(40px, 5vw, 55px)',
+        }}
+      >
+        <div className="flex items-center justify-between h-full">
+          {/* Левая часть: название доски и поиск */}
+          <div className="flex items-center" style={{ gap: 'clamp(20px, 3vw, 40px)' }}>
+            {/* Название доски */}
+            <div
+              className="font-bold text-white"
+              style={{
+                fontSize: 'clamp(20px, 2.5vw, 24px)',
+                marginRight: 'clamp(10px, 1.5vw, 20px)',
+              }}
             >
-              Обновить
-            </button>
+              {project.name.toUpperCase()}
+            </div>
+
+            {/* Поиск */}
+            <div className="flex items-center" style={{ gap: 'clamp(8px, 1vw, 12px)' }}>
+              <input
+                type="text"
+                placeholder="найти таску"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="text-white placeholder:text-white placeholder:font-medium outline-none"
+                style={{
+                  width: 'clamp(500px, 35vw, 640px)',
+                  height: 'clamp(50px, 6vw, 54px)',
+                  borderRadius: '32px',
+                  border: '1px solid #1E80D9',
+                  backgroundColor: '#242528',
+                  paddingLeft: 'clamp(30px, 4vw, 40px)',
+                  paddingRight: 'clamp(30px, 4vw, 40px)',
+                  fontSize: 'clamp(20px, 2.5vw, 24px)',
+                }}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              className="bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
-              placeholder="Новая колонка"
-              value={newStatusName}
-              onChange={(e) => setNewStatusName(e.target.value)}
-            />
+          {/* Правая часть: кнопка добавления и аватар */}
+          <div className="flex items-center" style={{ gap: 'clamp(12px, 2vw, 20px)' }}>
+            {/* Кнопка добавления задачи */}
             <button
-              className="px-4 py-2 bg-[#FF8800] rounded-xl hover:bg-[#e67800] transition text-sm"
-              onClick={handleAddStatus}
+              onClick={() => handleOpenModal(null, null)}
+              className="flex items-center justify-center text-white font-bold"
+              style={{
+                width: 'clamp(50px, 6vw, 54px)',
+                height: 'clamp(50px, 6vw, 54px)',
+                borderRadius: '50%',
+                backgroundColor: '#FF8800',
+                fontSize: 'clamp(35px, 4.5vw, 45px)',
+                lineHeight: '1',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s ease, transform 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#E67700';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#FF8800';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
             >
-              Добавить
+              +
             </button>
-          </div>
 
-          <button
-            className="px-4 py-2 bg-[#1E80D9] rounded-xl hover:bg-[#166bb7] transition text-sm"
-            onClick={() => handleOpenModal(null)}
-          >
-            Новая задача
-          </button>
+            {/* Аватар пользователя */}
+            {user && (
+              <div
+                style={{
+                  width: 'clamp(50px, 6vw, 53px)',
+                  height: 'clamp(50px, 6vw, 53px)',
+                  borderRadius: '50%',
+                  backgroundColor: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <div
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    border: '4px solid #757575',
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
+      {/* Ошибки */}
       {(tasksError || statusesError) && (
-        <div className="bg-[#FD5353] bg-opacity-20 border border-[#FD5353] text-white rounded-xl px-4 py-3 text-sm">
+        <div
+          className="text-[#FD5353] text-center"
+          style={{
+            padding: '20px',
+            fontSize: 'clamp(16px, 2vw, 20px)',
+          }}
+        >
           {(tasksError || statusesError)?.message || 'Ошибка загрузки данных'}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-4 items-start">
+      {/* Колонки */}
+      <div
+        className="flex items-start"
+        style={{
+          padding: 'clamp(40px, 5vw, 55px)',
+          gap: 'clamp(20px, 3vw, 30px)',
+          minHeight: 'calc(100vh - clamp(120px, 15vh, 148px))',
+        }}
+      >
         {(loadingStatuses || loadingTasks) && (
-          <div className="text-sm text-[#A1A1A4]">Загружаем данные...</div>
+          <div className="text-[#A1A1A4]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
+            Загружаем данные...
+          </div>
         )}
 
         {!loadingStatuses && statuses.length === 0 && (
-          <div className="text-sm text-[#A1A1A4]">
+          <div className="text-[#A1A1A4]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
             Колонки не найдены. Создайте первую колонку.
           </div>
         )}
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {statuses.map((status) => (
+        {!loadingStatuses && statuses.map((status) => (
           <div
             key={status.id}
-            className="bg-[#2a2b2f] border border-[#1E80D9] rounded-3xl p-4 space-y-4"
+            className="flex-1 flex flex-col"
+            style={{
+              minWidth: 'clamp(300px, 25vw, 372px)',
+              maxWidth: 'clamp(300px, 25vw, 372px)',
+            }}
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold">{status.name}</div>
-                <div className="text-xs text-[#A1A1A4]">
-                  Позиция: {status.position ?? '-'}
-                </div>
-              </div>
-              <button
-                className="text-[#FD5353] text-sm hover:underline"
-                onClick={() => handleDeleteStatus(status.id)}
-              >
-                Удалить
-              </button>
+            {/* Название колонки */}
+            <div
+              className="text-white font-normal mb-4"
+              style={{
+                fontSize: 'clamp(20px, 2.5vw, 24px)',
+                paddingLeft: 'clamp(10px, 1.5vw, 20px)',
+              }}
+            >
+              {status.name}
             </div>
 
-            <div className="space-y-3">
-              {(tasksByStatus[status.id] || []).map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  statuses={statuses}
-                  onEdit={handleOpenModal}
-                  onMove={handleMoveTask}
-                  onDelete={handleDeleteTask}
-                />
-              ))}
+            {/* Колонка с задачами */}
+            <div
+              className="flex-1 flex flex-col"
+              style={{
+                borderWidth: '1px 1px 0px 1px',
+                borderStyle: 'solid',
+                borderColor: '#1E80D9',
+                borderRadius: '50px 50px 0px 0px',
+                padding: 'clamp(20px, 3vw, 30px)',
+                minHeight: 'clamp(400px, 50vh, 600px)',
+              }}
+            >
+              {/* Задачи */}
+              <div className="flex-1">
+                {(tasksByStatus[status.id] || []).map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onEdit={handleOpenModal}
+                  />
+                ))}
 
-              {(tasksByStatus[status.id] || []).length === 0 && (
-                <div className="text-sm text-[#A1A1A4]">
-                  Нет задач в этой колонке
-                </div>
-              )}
+                {(tasksByStatus[status.id] || []).length === 0 && (
+                  <div
+                    className="text-[#838486] text-center"
+                    style={{
+                      fontSize: 'clamp(14px, 1.5vw, 16px)',
+                      padding: '20px',
+                    }}
+                  >
+                    Нет задач
+                  </div>
+                )}
+              </div>
+
+              {/* Кнопка добавления задачи в колонку */}
+              <button
+                onClick={() => handleOpenModal(null, status.id)}
+                className="flex items-center justify-center text-white font-medium mt-4"
+                style={{
+                  width: 'clamp(50px, 6vw, 54px)',
+                  height: 'clamp(50px, 6vw, 54px)',
+                  borderRadius: '50%',
+                  backgroundColor: '#838486',
+                  fontSize: 'clamp(35px, 4.5vw, 45px)',
+                  lineHeight: '1',
+                  border: 'none',
+                  cursor: 'pointer',
+                  margin: '0 auto',
+                  transition: 'background-color 0.3s ease, transform 0.3s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#6A6A6A';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#838486';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                +
+              </button>
             </div>
           </div>
         ))}
@@ -356,13 +426,17 @@ export default function KanbanBoard() {
 
       <TaskModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setModalTask(null);
+          setSelectedStatusId(null);
+        }}
         onSave={handleSaveTask}
         statuses={statuses}
         task={modalTask}
         isSaving={false}
+        defaultStatusId={selectedStatusId}
       />
     </div>
   );
 }
-
