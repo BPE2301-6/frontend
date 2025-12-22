@@ -3,11 +3,11 @@ import { useUsers } from '@entities/users/useUsers';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 import { Task, Status, TaskCreatePayload } from '@shared/api/types';
 
-const priorityOptions = [
-  { value: 'HIGH', label: 'Высокий' },
-  { value: 'MEDIUM', label: 'Средний' },
-  { value: 'LOW', label: 'Низкий' },
-];
+const PRIORITY_COLOR: Record<string, string> = {
+  HIGH: '#FD5353',
+  MEDIUM: '#FDD253',
+  LOW: '#62C53E',
+};
 
 interface TaskForm {
   title: string;
@@ -112,52 +112,176 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       payload.tag_ids = tags;
     }
 
-    // Комментарий обрабатывается отдельно после создания задачи
-    // if (form.comment.trim()) {
-    //   payload.comment = form.comment.trim();
-    // }
-
     onSave(payload);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="w-full max-w-2xl bg-[#242528] border border-[#1E80D9] rounded-3xl p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold">
-              {task ? 'Редактировать задачу' : 'Новая задача'}
-            </h2>
-            <p className="text-sm text-[#A1A1A4]">
-              Заполните поля и нажмите «Сохранить»
-            </p>
-          </div>
-          <button
-            className="text-[#A1A1A4] hover:text-white"
-            onClick={onClose}
-            type="button"
-          >
-            Закрыть
-          </button>
-        </div>
+  const priorityColor = PRIORITY_COLOR[form.priority] || PRIORITY_COLOR.MEDIUM;
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Название</label>
-              <input
-                className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
-                placeholder="Например: сверстать форму"
-                value={form.title}
-                onChange={handleChange('title')}
-                required
+  return (
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backdropFilter: 'blur(4px)',
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#242528] border border-[#1E80D9] relative"
+        style={{
+          width: 'clamp(500px, 50vw, 535px)',
+          borderRadius: '50px',
+          padding: 'clamp(30px, 4vw, 40px)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Заголовок */}
+        <h2
+          className="font-bold text-white mb-6"
+          style={{
+            fontSize: 'clamp(20px, 2.5vw, 24px)',
+          }}
+        >
+          {task ? 'Название' : 'Название'}
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Колонка (Статус) */}
+          <div>
+            <label
+              className="block text-white font-medium mb-2"
+              style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+            >
+              Колонка
+            </label>
+            <select
+              className="w-full text-white outline-none"
+              style={{
+                backgroundColor: '#313236',
+                borderRadius: '15px',
+                padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                fontSize: 'clamp(16px, 2vw, 20px)',
+                border: 'none',
+              }}
+              value={form.status_id || firstStatusId}
+              onChange={handleChange('status_id')}
+            >
+              {statuses.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {status.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Описание и Исполнитель */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                className="block text-white font-medium mb-2"
+                style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+              >
+                Описание таски
+              </label>
+              <textarea
+                className="w-full text-white placeholder:text-gray-400 outline-none resize-none"
+                style={{
+                  backgroundColor: '#313236',
+                  borderRadius: '20px',
+                  padding: 'clamp(12px, 2vw, 16px)',
+                  fontSize: 'clamp(14px, 1.5vw, 16px)',
+                  border: 'none',
+                  minHeight: 'clamp(80px, 10vw, 104px)',
+                }}
+                placeholder="Описание задачи"
+                value={form.description}
+                onChange={handleChange('description')}
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Статус</label>
+            <div>
+              <label
+                className="block text-white font-medium mb-2"
+                style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+              >
+                Исполнитель
+              </label>
               <select
-                className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
+                className="w-full text-white outline-none"
+                style={{
+                  backgroundColor: '#313236',
+                  borderRadius: '15px',
+                  padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  border: 'none',
+                }}
+                value={form.assignee_id}
+                onChange={handleChange('assignee_id')}
+              >
+                <option value="">Не выбран</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name || u.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Приоритет и Статус */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                className="block text-white font-medium mb-2"
+                style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+              >
+                Приоритет
+              </label>
+              <div className="flex items-center gap-3">
+                <select
+                  className="flex-1 text-white outline-none"
+                  style={{
+                    backgroundColor: '#313236',
+                    borderRadius: '15px',
+                    padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                    fontSize: 'clamp(16px, 2vw, 20px)',
+                    border: 'none',
+                  }}
+                  value={form.priority}
+                  onChange={handleChange('priority')}
+                >
+                  <option value="HIGH">Высокий</option>
+                  <option value="MEDIUM">Средний</option>
+                  <option value="LOW">Низкий</option>
+                </select>
+                <div
+                  style={{
+                    width: '17px',
+                    height: '17px',
+                    borderRadius: '50%',
+                    backgroundColor: priorityColor,
+                    flexShrink: 0,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                className="block text-white font-medium mb-2"
+                style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+              >
+                Статус
+              </label>
+              <select
+                className="w-full text-white outline-none"
+                style={{
+                  backgroundColor: '#313236',
+                  borderRadius: '15px',
+                  padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  border: 'none',
+                }}
                 value={form.status_id || firstStatusId}
                 onChange={handleChange('status_id')}
               >
@@ -170,120 +294,148 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm text-[#A1A1A4]">Описание</label>
+          {/* Комментарии */}
+          <div>
+            <label
+              className="block text-white font-medium mb-2"
+              style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+            >
+              Комментарии
+            </label>
             <textarea
-              className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none min-h-[100px]"
-              placeholder="Коротко опишите задачу"
-              value={form.description}
-              onChange={handleChange('description')}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Исполнитель</label>
-              <select
-                className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
-                value={form.assignee_id}
-                onChange={handleChange('assignee_id')}
-              >
-                <option value="">Не выбран</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.email} {user.name ? `(${user.name})` : ''}
-                  </option>
-                ))}
-              </select>
-              {usersLoading && (
-                <div className="text-xs text-[#A1A1A4]">Загружаем пользователей...</div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Автор</label>
-              <select
-                className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
-                value={form.reporter_id}
-                onChange={handleChange('reporter_id')}
-              >
-                <option value="">Не выбран</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.email} {user.name ? `(${user.name})` : ''}
-                  </option>
-                ))}
-              </select>
-              {usersLoading && (
-                <div className="text-xs text-[#A1A1A4]">Загружаем пользователей...</div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Приоритет</label>
-              <select
-                className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
-                value={form.priority}
-                onChange={handleChange('priority')}
-              >
-                {priorityOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Дедлайн</label>
-              <input
-                type="date"
-                className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
-                value={form.due_date}
-                onChange={handleChange('due_date')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-[#A1A1A4]">Теги (через запятую)</label>
-              <input
-                className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none"
-                value={form.tag_ids}
-                onChange={handleChange('tag_ids')}
-                placeholder="например: ui, backend"
-              />
-              <div className="text-xs text-[#A1A1A4]">
-                До появления справочника используйте произвольные метки.
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-[#A1A1A4]">Комментарий</label>
-            <textarea
-              className="w-full bg-[#313236] border border-[#1E80D9] rounded-xl px-4 py-2 text-sm focus:outline-none min-h-[80px]"
-              placeholder="Оставьте комментарий к задаче"
+              className="w-full text-white placeholder:text-gray-400 outline-none resize-none"
+              style={{
+                backgroundColor: '#313236',
+                borderRadius: '20px',
+                padding: 'clamp(12px, 2vw, 16px)',
+                fontSize: 'clamp(14px, 1.5vw, 16px)',
+                border: 'none',
+                minHeight: 'clamp(80px, 10vw, 104px)',
+              }}
+              placeholder="Комментарий к задаче"
               value={form.comment}
               onChange={handleChange('comment')}
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          {/* Дедлайн и Тип */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                className="block text-white font-medium mb-2"
+                style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+              >
+                Дедлайн:
+              </label>
+              <input
+                type="date"
+                className="w-full text-white outline-none"
+                style={{
+                  backgroundColor: '#313236',
+                  borderRadius: '15px',
+                  padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  border: 'none',
+                }}
+                value={form.due_date}
+                onChange={handleChange('due_date')}
+              />
+            </div>
+
+            <div>
+              <label
+                className="block text-white font-medium mb-2"
+                style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}
+              >
+                Тип
+              </label>
+              <input
+                type="text"
+                className="w-full text-white placeholder:text-gray-400 outline-none"
+                style={{
+                  backgroundColor: '#313236',
+                  borderRadius: '15px',
+                  padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  border: 'none',
+                }}
+                placeholder="Тип задачи"
+                value={form.tag_ids}
+                onChange={handleChange('tag_ids')}
+              />
+            </div>
+          </div>
+
+          {/* Название задачи */}
+          <div>
+            <input
+              type="text"
+              className="w-full text-white placeholder:text-gray-400 outline-none"
+              style={{
+                backgroundColor: '#313236',
+                borderRadius: '15px',
+                padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                fontSize: 'clamp(16px, 2vw, 20px)',
+                border: 'none',
+              }}
+              placeholder="Название задачи"
+              value={form.title}
+              onChange={handleChange('title')}
+              required
+            />
+          </div>
+
+          {/* Кнопки */}
+          <div className="flex justify-end gap-4 mt-6">
             <button
               type="button"
-              className="px-4 py-2 text-sm rounded-xl border border-[#1E80D9] hover:bg-[#313236] transition"
               onClick={onClose}
+              className="text-white font-bold"
+              style={{
+                width: 'clamp(100px, 12vw, 122px)',
+                height: 'clamp(45px, 5.5vw, 54px)',
+                borderRadius: '15px',
+                backgroundColor: '#838486',
+                fontSize: 'clamp(14px, 1.5vw, 16px)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#6A6A6A';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#838486';
+              }}
             >
               Отмена
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-2 text-sm rounded-xl bg-[#FF8800] hover:bg-[#e67800] transition disabled:opacity-60"
+              className="text-white font-bold disabled:opacity-50"
+              style={{
+                width: 'clamp(100px, 12vw, 122px)',
+                height: 'clamp(45px, 5.5vw, 54px)',
+                borderRadius: '15px',
+                backgroundColor: '#FF8800',
+                fontSize: 'clamp(14px, 1.5vw, 16px)',
+                border: 'none',
+                cursor: isSaving ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSaving) {
+                  e.currentTarget.style.backgroundColor = '#E67700';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSaving) {
+                  e.currentTarget.style.backgroundColor = '#FF8800';
+                }
+              }}
             >
-              {isSaving ? 'Сохраняем...' : 'Сохранить'}
+              {isSaving ? 'Сохранение...' : 'Сохранить'}
             </button>
           </div>
         </form>
@@ -291,4 +443,3 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
     </div>
   );
 }
-

@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import TaskModal from './TaskModal';
+import StatusModal from './StatusModal';
 import { useStatuses } from '@entities/statuses/useStatuses';
 import { useTasks } from '@entities/tasks/useTasks';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 import { projectsApi } from '@shared/api/projects';
-import { Task, Status, TaskCreatePayload, Project } from '@shared/api/types';
+import { Task, Status, TaskCreatePayload, Project, StatusCreatePayload } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
 
 const PRIORITY_COLOR: Record<string, string> = {
@@ -114,8 +115,7 @@ export default function KanbanBoard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [selectedStatusId, setSelectedStatusId] = useState<string | null>(null);
-  const [newStatusName, setNewStatusName] = useState('');
-  const [showCreateStatus, setShowCreateStatus] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
   useEffect(() => {
     if (!projectId) {
@@ -214,24 +214,20 @@ export default function KanbanBoard() {
     setIsModalOpen(true);
   };
 
-  const handleCreateStatus = async () => {
-    if (!projectId || !newStatusName.trim()) {
-      alert('Введите название колонки');
+  const handleCreateStatus = async (payload: StatusCreatePayload) => {
+    if (!projectId) {
+      alert('Проект не найден');
       return;
     }
     try {
-      await createStatus({
-        name: newStatusName.trim(),
-        position: statuses.length,
-        is_closed: false,
-      });
-      setNewStatusName('');
-      setShowCreateStatus(false);
+      await createStatus(payload);
+      setIsStatusModalOpen(false);
     } catch (err) {
       const message =
         (isStatusApiError(err) && (err as ApiError).payload?.message) || 
         (err instanceof Error ? err.message : 'Ошибка создания колонки');
       alert(message);
+      throw err;
     }
   };
 
@@ -287,6 +283,29 @@ export default function KanbanBoard() {
 
           {/* Правая часть: кнопка добавления и аватар */}
           <div className="flex items-center" style={{ gap: 'clamp(12px, 2vw, 20px)' }}>
+            {/* Кнопка добавления колонки */}
+            <button
+              onClick={() => setIsStatusModalOpen(true)}
+              className="text-white font-medium"
+              style={{
+                padding: 'clamp(8px, 1vw, 12px) clamp(16px, 2vw, 24px)',
+                borderRadius: '32px',
+                backgroundColor: '#1E80D9',
+                fontSize: 'clamp(14px, 1.5vw, 18px)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#166BB7';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#1E80D9';
+              }}
+            >
+              Добавить колонку
+            </button>
+
             {/* Кнопка добавления задачи */}
             <button
               onClick={() => handleOpenModal(null, null)}
@@ -386,98 +405,27 @@ export default function KanbanBoard() {
             <div className="text-[#A1A1A4]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
               Колонки не найдены. Создайте первую колонку.
             </div>
-            {!showCreateStatus ? (
-              <button
-                onClick={() => setShowCreateStatus(true)}
-                className="text-white font-medium"
-                style={{
-                  padding: 'clamp(12px, 1.5vw, 16px) clamp(24px, 3vw, 32px)',
-                  borderRadius: '32px',
-                  backgroundColor: '#1E80D9',
-                  fontSize: 'clamp(16px, 2vw, 20px)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#166BB7';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#1E80D9';
-                }}
-              >
-                Создать колонку
-              </button>
-            ) : (
-              <div className="flex items-center" style={{ gap: '12px' }}>
-                <input
-                  type="text"
-                  placeholder="Название колонки"
-                  value={newStatusName}
-                  onChange={(e) => setNewStatusName(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleCreateStatus();
-                    }
-                  }}
-                  className="text-white placeholder:text-gray-400 outline-none"
-                  style={{
-                    padding: 'clamp(12px, 1.5vw, 16px) clamp(20px, 2.5vw, 28px)',
-                    borderRadius: '32px',
-                    border: '1px solid #1E80D9',
-                    backgroundColor: '#242528',
-                    fontSize: 'clamp(16px, 2vw, 20px)',
-                    minWidth: '200px',
-                  }}
-                  autoFocus
-                />
-                <button
-                  onClick={handleCreateStatus}
-                  className="text-white font-medium"
-                  style={{
-                    padding: 'clamp(12px, 1.5vw, 16px) clamp(24px, 3vw, 32px)',
-                    borderRadius: '32px',
-                    backgroundColor: '#FF8800',
-                    fontSize: 'clamp(16px, 2vw, 20px)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#E67700';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#FF8800';
-                  }}
-                >
-                  Создать
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCreateStatus(false);
-                    setNewStatusName('');
-                  }}
-                  className="text-white font-medium"
-                  style={{
-                    padding: 'clamp(12px, 1.5vw, 16px) clamp(24px, 3vw, 32px)',
-                    borderRadius: '32px',
-                    backgroundColor: '#606060',
-                    fontSize: 'clamp(16px, 2vw, 20px)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#505050';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#606060';
-                  }}
-                >
-                  Отмена
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => setIsStatusModalOpen(true)}
+              className="text-white font-medium"
+              style={{
+                padding: 'clamp(12px, 1.5vw, 16px) clamp(24px, 3vw, 32px)',
+                borderRadius: '32px',
+                backgroundColor: '#1E80D9',
+                fontSize: 'clamp(16px, 2vw, 20px)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background-color 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#166BB7';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#1E80D9';
+              }}
+            >
+              Создать колонку
+            </button>
           </div>
         )}
 
@@ -580,6 +528,14 @@ export default function KanbanBoard() {
         task={modalTask}
         isSaving={false}
         defaultStatusId={selectedStatusId}
+      />
+
+      <StatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        onSave={handleCreateStatus}
+        isSaving={false}
+        defaultPosition={statuses.length}
       />
     </div>
   );

@@ -93,8 +93,10 @@ export default function ProjectSelection() {
       return;
     }
 
-    if (!user) {
-      setCreateError('Пользователь не авторизован');
+    // Получаем актуальное состояние пользователя
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser || !currentUser.id) {
+      setCreateError('Пользователь не авторизован. Пожалуйста, войдите в систему.');
       return;
     }
 
@@ -103,7 +105,7 @@ export default function ProjectSelection() {
         key: newProject.key.trim().toUpperCase(),
         name: newProject.name.trim(),
         description: newProject.description.trim() || null,
-        lead_id: user.id,
+        lead_id: currentUser.id,
       };
 
       const createdProject = await createProject(payload);
