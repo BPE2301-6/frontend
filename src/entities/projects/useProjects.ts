@@ -15,6 +15,11 @@ export function useProjects(initialFilters: ProjectsQueryParams = {}) {
   const [filters, setFilters] = useState<ProjectsQueryParams>(initialFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [pagination, setPagination] = useState<{
+    total: number;
+    limit: number;
+    offset: number;
+  }>({ total: 0, limit: 20, offset: 0 });
 
   const load = async () => {
     setLoading(true);
@@ -22,6 +27,11 @@ export function useProjects(initialFilters: ProjectsQueryParams = {}) {
     try {
       const res = await projectsApi.list(filters);
       setProjects(res?.items || []);
+      setPagination({
+        total: res?.total || 0,
+        limit: res?.limit || 20,
+        offset: res?.offset || 0,
+      });
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -69,6 +79,7 @@ export function useProjects(initialFilters: ProjectsQueryParams = {}) {
     reload: load,
     createProject,
     updateProject,
+    pagination,
     isApiError: (err: unknown): err is ApiError => err instanceof ApiError,
   };
 }

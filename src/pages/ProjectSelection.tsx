@@ -19,7 +19,9 @@ export default function ProjectSelection() {
     description: '',
   });
   const [createError, setCreateError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const limit = 20;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -50,6 +52,7 @@ export default function ProjectSelection() {
     }
   }, [showCreateModal]);
 
+
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewProject({ ...newProject, description: e.target.value });
     // Автоматическое изменение высоты
@@ -65,12 +68,21 @@ export default function ProjectSelection() {
     setFilters,
     createProject,
     isApiError,
-  } = useProjects({ search: searchQuery, limit: 20, offset: 0 });
+    pagination,
+  } = useProjects({ search: searchQuery, limit, offset: (currentPage - 1) * limit });
 
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setFilters({ search: searchQuery, limit: 20, offset: 0 });
+    setCurrentPage(1);
+    setFilters({ search: searchQuery, limit, offset: 0 });
   };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setFilters({ search: searchQuery, limit, offset: (page - 1) * limit });
+  };
+
+  const totalPages = Math.ceil((pagination.total || 0) / limit);
 
   const handleCreateProject = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -134,10 +146,13 @@ export default function ProjectSelection() {
       setViewMode(null);
       setSearchQuery('');
       setShowCreateModal(false);
+      setCurrentPage(1);
     } else {
       // Первое нажатие - открываем форму поиска
       setViewMode('search');
       setShowCreateModal(false);
+      setCurrentPage(1);
+      setFilters({ search: '', limit, offset: 0 });
     }
   };
 
@@ -325,24 +340,30 @@ export default function ProjectSelection() {
             )}
 
             {!loading && !error && projects.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 w-full">
-                {projects.map((project) => (
-                  <button
-                    key={project.id}
-                    onClick={() => handleSelectProject(project.id)}
-                    className="bg-[#2A2D31] border-2 border-[#1E80D9] rounded-2xl p-6 text-left hover:border-[#FF8800] transition-all duration-300 cursor-pointer"
-                    style={{
-                      transform: 'scale(1)',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.02)';
-                      e.currentTarget.style.boxShadow = '0 0 20px rgba(30, 128, 217, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 w-full" style={{ gap: 'clamp(24px, 3vw, 40px)', marginTop: 'clamp(40px, 5vw, 60px)' }}>
+                  {projects.map((project) => (
+                    <button
+                      key={project.id}
+                      onClick={() => handleSelectProject(project.id)}
+                      className="bg-[#2A2D31] text-left hover:border-[#FF8800] transition-all duration-300 cursor-pointer"
+                      style={{
+                        transform: 'scale(1)',
+                        border: '3px solid #1E80D9',
+                        borderRadius: '16px',
+                        padding: 'clamp(24px, 3vw, 32px)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                        e.currentTarget.style.boxShadow = '0 0 20px rgba(30, 128, 217, 0.4)';
+                        e.currentTarget.style.borderColor = '#FF8800';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.borderColor = '#1E80D9';
+                      }}
+                    >
                     <div
                       className="font-bold mb-2"
                       style={{
@@ -372,7 +393,90 @@ export default function ProjectSelection() {
                     )}
                   </button>
                 ))}
-              </div>
+                </div>
+
+                {/* Пагинация */}
+                {totalPages > 1 && (
+                  <div className="flex flex-row items-center justify-center w-full mt-8" style={{ gap: 'clamp(8px, 1vw, 12px)' }}>
+                    {/* Кнопка "Назад" */}
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="text-white font-medium leading-tight lowercase disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        width: 'clamp(100px, 12vw, 140px)',
+                        height: 'clamp(60px, 7vw, 80px)',
+                        borderRadius: '9999px',
+                        backgroundColor: currentPage === 1 ? '#606060' : '#1E80D9',
+                        fontSize: 'clamp(20px, 2.5vw, 28px)',
+                        border: 'none',
+                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        transition: 'background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentPage !== 1) {
+                          e.currentTarget.style.backgroundColor = '#166BB7';
+                          e.currentTarget.style.boxShadow = '0 0 15px rgba(30, 128, 217, 0.5)';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentPage !== 1) {
+                          e.currentTarget.style.backgroundColor = '#1E80D9';
+                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }
+                      }}
+                    >
+                      Назад
+                    </button>
+
+                    {/* Информация о странице */}
+                    <div
+                      className="text-white font-medium"
+                      style={{
+                        fontSize: 'clamp(20px, 2.5vw, 28px)',
+                        padding: '0 clamp(16px, 2vw, 24px)',
+                      }}
+                    >
+                      Страница {currentPage} из {totalPages}
+                    </div>
+
+                    {/* Кнопка "Вперед" */}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="text-white font-medium leading-tight lowercase disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        width: 'clamp(100px, 12vw, 140px)',
+                        height: 'clamp(60px, 7vw, 80px)',
+                        borderRadius: '9999px',
+                        backgroundColor: currentPage === totalPages ? '#606060' : '#1E80D9',
+                        fontSize: 'clamp(20px, 2.5vw, 28px)',
+                        border: 'none',
+                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        transition: 'background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (currentPage !== totalPages) {
+                          e.currentTarget.style.backgroundColor = '#166BB7';
+                          e.currentTarget.style.boxShadow = '0 0 15px rgba(30, 128, 217, 0.5)';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (currentPage !== totalPages) {
+                          e.currentTarget.style.backgroundColor = '#1E80D9';
+                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }
+                      }}
+                    >
+                      Вперед
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
