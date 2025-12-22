@@ -114,6 +114,8 @@ export default function KanbanBoard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [selectedStatusId, setSelectedStatusId] = useState<string | null>(null);
+  const [newStatusName, setNewStatusName] = useState('');
+  const [showCreateStatus, setShowCreateStatus] = useState(false);
 
   useEffect(() => {
     if (!projectId) {
@@ -162,21 +164,33 @@ export default function KanbanBoard() {
     return grouped;
   }, [statuses, tasks]);
 
+  // Обновление фильтров поиска с debounce
   useEffect(() => {
-    if (searchQuery !== undefined) {
-      setTaskFilters({ q: searchQuery });
-    }
-  }, [searchQuery, setTaskFilters]);
+    const timeoutId = setTimeout(() => {
+      if (projectId) {
+        setTaskFilters({ q: searchQuery || '' });
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, projectId, setTaskFilters]);
 
   const handleSaveTask = async (payload: TaskCreatePayload) => {
-    if (!projectId) return;
+    if (!projectId || !user) {
+      alert('Ошибка: проект или пользователь не найден');
+      return;
+    }
     try {
       if (modalTask?.id) {
+        // При обновлении задачи сохраняем reporter_id из существующей задачи
         await updateTask(modalTask.id, payload);
       } else {
-        const taskPayload = selectedStatusId 
-          ? { ...payload, status_id: selectedStatusId }
-          : payload;
+        // При создании новой задачи устанавливаем reporter_id из текущего пользователя
+        const taskPayload: TaskCreatePayload = {
+          ...payload,
+          reporter_id: user.id,
+          status_id: selectedStatusId || payload.status_id,
+        };
         await createTask(taskPayload);
       }
       setIsModalOpen(false);
@@ -185,15 +199,40 @@ export default function KanbanBoard() {
     } catch (err) {
       const message =
         (isTaskApiError(err) && (err as ApiError).payload?.message) || 
-        (err instanceof Error ? err.message : 'Ошибка сохранения');
+        (err instanceof Error ? err.message : 'Ошибка сохранения задачи');
       alert(message);
     }
   };
 
   const handleOpenModal = (task: Task | null = null, statusId: string | null = null) => {
+    if (!task && statuses.length === 0) {
+      alert('Сначала создайте хотя бы одну колонку (статус)');
+      return;
+    }
     setModalTask(task);
     setSelectedStatusId(statusId);
     setIsModalOpen(true);
+  };
+
+  const handleCreateStatus = async () => {
+    if (!projectId || !newStatusName.trim()) {
+      alert('Введите название колонки');
+      return;
+    }
+    try {
+      await createStatus({
+        name: newStatusName.trim(),
+        position: statuses.length,
+        is_closed: false,
+      });
+      setNewStatusName('');
+      setShowCreateStatus(false);
+    } catch (err) {
+      const message =
+        (isStatusApiError(err) && (err as ApiError).payload?.message) || 
+        (err instanceof Error ? err.message : 'Ошибка создания колонки');
+      alert(message);
+    }
   };
 
   if (!projectId || !project) {
@@ -277,7 +316,8 @@ export default function KanbanBoard() {
 
             {/* Аватар пользователя */}
             {user && (
-              <div
+              <button
+                onClick={() => navigate('/projects')}
                 style={{
                   width: 'clamp(50px, 6vw, 53px)',
                   height: 'clamp(50px, 6vw, 53px)',
@@ -287,7 +327,17 @@ export default function KanbanBoard() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
+                  border: 'none',
+                  padding: 0,
+                  transition: 'transform 0.3s ease',
                 }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                title={user.name || user.email}
               >
                 <div
                   style={{
@@ -297,7 +347,7 @@ export default function KanbanBoard() {
                     border: '4px solid #757575',
                   }}
                 />
-              </div>
+              </button>
             )}
           </div>
         </div>
@@ -332,8 +382,102 @@ export default function KanbanBoard() {
         )}
 
         {!loadingStatuses && statuses.length === 0 && (
-          <div className="text-[#A1A1A4]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-            Колонки не найдены. Создайте первую колонку.
+          <div className="flex flex-col items-center justify-center w-full" style={{ gap: '20px', padding: '40px' }}>
+            <div className="text-[#A1A1A4]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
+              Колонки не найдены. Создайте первую колонку.
+            </div>
+            {!showCreateStatus ? (
+              <button
+                onClick={() => setShowCreateStatus(true)}
+                className="text-white font-medium"
+                style={{
+                  padding: 'clamp(12px, 1.5vw, 16px) clamp(24px, 3vw, 32px)',
+                  borderRadius: '32px',
+                  backgroundColor: '#1E80D9',
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#166BB7';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1E80D9';
+                }}
+              >
+                Создать колонку
+              </button>
+            ) : (
+              <div className="flex items-center" style={{ gap: '12px' }}>
+                <input
+                  type="text"
+                  placeholder="Название колонки"
+                  value={newStatusName}
+                  onChange={(e) => setNewStatusName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateStatus();
+                    }
+                  }}
+                  className="text-white placeholder:text-gray-400 outline-none"
+                  style={{
+                    padding: 'clamp(12px, 1.5vw, 16px) clamp(20px, 2.5vw, 28px)',
+                    borderRadius: '32px',
+                    border: '1px solid #1E80D9',
+                    backgroundColor: '#242528',
+                    fontSize: 'clamp(16px, 2vw, 20px)',
+                    minWidth: '200px',
+                  }}
+                  autoFocus
+                />
+                <button
+                  onClick={handleCreateStatus}
+                  className="text-white font-medium"
+                  style={{
+                    padding: 'clamp(12px, 1.5vw, 16px) clamp(24px, 3vw, 32px)',
+                    borderRadius: '32px',
+                    backgroundColor: '#FF8800',
+                    fontSize: 'clamp(16px, 2vw, 20px)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#E67700';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#FF8800';
+                  }}
+                >
+                  Создать
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCreateStatus(false);
+                    setNewStatusName('');
+                  }}
+                  className="text-white font-medium"
+                  style={{
+                    padding: 'clamp(12px, 1.5vw, 16px) clamp(24px, 3vw, 32px)',
+                    borderRadius: '32px',
+                    backgroundColor: '#606060',
+                    fontSize: 'clamp(16px, 2vw, 20px)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#505050';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#606060';
+                  }}
+                >
+                  Отмена
+                </button>
+              </div>
+            )}
           </div>
         )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, ChangeEvent, FormEvent } from 'react';
 import { useUsers } from '@entities/users/useUsers';
+import { useAuthStore } from '@entities/auth/useAuthStore';
 import { Task, Status, TaskCreatePayload } from '@shared/api/types';
 
 const priorityOptions = [
@@ -45,6 +46,7 @@ interface TaskModalProps {
 export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId }: TaskModalProps) {
   const [form, setForm] = useState<TaskForm>(defaultForm);
   const { users, loading: usersLoading } = useUsers({ limit: 50 });
+  const { user } = useAuthStore();
 
   const firstStatusId = useMemo(
     () => (statuses.length > 0 ? statuses[0].id : ''),
@@ -68,9 +70,13 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       });
     } else {
       const statusId = defaultStatusId || firstStatusId;
-      setForm({ ...defaultForm, status_id: statusId });
+      setForm({ 
+        ...defaultForm, 
+        status_id: statusId,
+        reporter_id: user?.id || '',
+      });
     }
-  }, [task, firstStatusId, isOpen, defaultStatusId]);
+  }, [task, firstStatusId, isOpen, defaultStatusId, user]);
 
   if (!isOpen) return null;
 
@@ -92,7 +98,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       description: form.description.trim() || null,
       priority: form.priority as 'HIGH' | 'MEDIUM' | 'LOW',
       status_id: statusId,
-      reporter_id: form.reporter_id || '',
+      reporter_id: form.reporter_id || user?.id || '',
       assignee_id: form.assignee_id || null,
       due_date: form.due_date || null,
     };
