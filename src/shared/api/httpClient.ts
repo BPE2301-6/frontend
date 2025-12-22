@@ -35,20 +35,33 @@ const buildUrl = (path: string, query?: QueryParams): string => {
   // Путь должен быть полным (уже содержать /api/v1)
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
-  const url = new URL(normalizedPath, base);
+  
+  // Используем относительный URL если base это localhost или абсолютный URL
+  let fullUrl: string;
+  try {
+    const url = new URL(normalizedPath, base);
+    fullUrl = url.toString();
+  } catch (error) {
+    // Если не удалось создать URL (например, относительный путь), используем конкатенацию
+    fullUrl = `${base}${normalizedPath}`;
+  }
 
   if (query) {
+    const urlObj = new URL(fullUrl);
     Object.entries(query)
       .filter(([, value]) => !isEmptyValue(value))
       .forEach(([key, value]) => {
         if (Array.isArray(value)) {
-          value.forEach((v) => url.searchParams.append(key, String(v)));
+          value.forEach((v) => urlObj.searchParams.append(key, String(v)));
         } else {
-          url.searchParams.set(key, String(value));
+          urlObj.searchParams.set(key, String(value));
         }
       });
+    fullUrl = urlObj.toString();
   }
-  return url.toString();
+  
+  console.log('API Request URL:', fullUrl);
+  return fullUrl;
 };
 
 export interface HttpRequestOptions {
@@ -71,12 +84,29 @@ export async function httpRequest<T = unknown>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(buildUrl(path, query), {
-    method,
-    signal,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const url = buildUrl(path, query);
+  console.log('API Request:', { method, url, headers, body: body ? JSON.stringify(body) : undefined });
+  
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method,
+      signal,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (error) {
+    // Обработка сетевых ошибок (CORS, нет подключения и т.д.)
+    console.error('Network error:', error);
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+      throw new ApiError(
+        'Ошибка сети. Проверьте подключение к серверу и убедитесь, что бэкенд запущен на ' + API_BASE_URL,
+        0,
+        { message: 'Network error', originalError: error.message, url }
+      );
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     let payload: ApiErrorPayload | null = null;

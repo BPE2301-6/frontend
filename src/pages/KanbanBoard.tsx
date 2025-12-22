@@ -219,13 +219,25 @@ export default function KanbanBoard() {
       alert('Проект не найден');
       return;
     }
+    
+    console.log('Создание колонки:', { projectId, payload });
+    
     try {
-      await createStatus(payload);
+      const result = await createStatus(payload);
+      console.log('Колонка успешно создана:', result);
       setIsStatusModalOpen(false);
     } catch (err) {
-      const message =
-        (isStatusApiError(err) && (err as ApiError).payload?.message) || 
-        (err instanceof Error ? err.message : 'Ошибка создания колонки');
+      let message = 'Ошибка создания колонки';
+      
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        message = 'Ошибка сети. Проверьте подключение к серверу и убедитесь, что бэкенд запущен.';
+      } else if (isStatusApiError(err)) {
+        message = (err as ApiError).payload?.message || err.message || message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      
+      console.error('Ошибка создания колонки:', err);
       alert(message);
       throw err;
     }

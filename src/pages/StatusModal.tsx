@@ -4,7 +4,7 @@ import { StatusCreatePayload } from '@shared/api/types';
 interface StatusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (payload: StatusCreatePayload) => void;
+  onSave: (payload: StatusCreatePayload) => Promise<void>;
   isSaving: boolean;
   defaultPosition?: number;
 }
@@ -16,7 +16,7 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) {
       alert('Введите название колонки');
@@ -29,18 +29,30 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
       is_closed: false,
     };
 
-    onSave(payload);
-    setName('');
-    setHasLimit(false);
-    setLimit('');
+    try {
+      await onSave(payload);
+      // Очищаем форму только после успешного сохранения
+      setName('');
+      setHasLimit(false);
+      setLimit('');
+    } catch (error) {
+      // Ошибка уже обработана в handleCreateStatus
+      // Не очищаем форму, чтобы пользователь мог исправить данные
+    }
   };
 
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center"
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(4px)',
+        zIndex: 9999,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
       }}
       onClick={onClose}
     >
@@ -48,8 +60,13 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
         className="bg-[#242528] border border-[#1E80D9] relative"
         style={{
           width: 'clamp(500px, 50vw, 535px)',
+          maxWidth: '90vw',
           borderRadius: '50px',
           padding: 'clamp(30px, 4vw, 40px)',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          position: 'relative',
+          zIndex: 10000,
         }}
         onClick={(e) => e.stopPropagation()}
       >
