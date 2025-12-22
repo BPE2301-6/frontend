@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjects } from '@entities/projects/useProjects';
 import { useAuthStore } from '@entities/auth/useAuthStore';
@@ -19,12 +19,44 @@ export default function ProjectSelection() {
     description: '',
   });
   const [createError, setCreateError] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+
+  // Автоматическое изменение высоты textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [newProject.description]);
+
+  // Сброс высоты textarea при открытии/закрытии модального окна
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      if (showCreateModal) {
+        // При открытии устанавливаем минимальную высоту
+        textarea.style.height = 'clamp(100px, 12vw, 150px)';
+      } else {
+        // При закрытии сбрасываем высоту
+        textarea.style.height = 'clamp(100px, 12vw, 150px)';
+      }
+    }
+  }, [showCreateModal]);
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewProject({ ...newProject, description: e.target.value });
+    // Автоматическое изменение высоты
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
 
   const {
     projects,
@@ -96,9 +128,22 @@ export default function ProjectSelection() {
     }
   };
 
+  const handleSearchButtonClick = () => {
+    if (viewMode === 'search') {
+      // Второе нажатие - закрываем форму поиска
+      setViewMode(null);
+      setSearchQuery('');
+      setShowCreateModal(false);
+    } else {
+      // Первое нажатие - открываем форму поиска
+      setViewMode('search');
+      setShowCreateModal(false);
+    }
+  };
+
   return (
     <>
-      <div className="w-full min-h-screen bg-[#242528] flex flex-col items-center justify-start font-montserrat text-center px-4" style={{ paddingTop: 'clamp(60px, 10vh, 120px)' }}>
+      <div className="w-full min-h-screen bg-[#242528] flex flex-col items-center justify-start font-montserrat text-center px-4" style={{ paddingTop: 'clamp(20px, 3vh, 40px)' }}>
         {/* Заголовок */}
         <h1
           className="font-bold leading-tight"
@@ -115,10 +160,7 @@ export default function ProjectSelection() {
         <div className="flex flex-row items-center justify-center w-full px-4 sm:px-8 mb-8">
           {/* Найти проект - слева, синяя */}
           <button
-            onClick={() => {
-              setViewMode('search');
-              setShowCreateModal(false);
-            }}
+            onClick={handleSearchButtonClick}
             className="font-medium leading-tight lowercase text-white flex-shrink-0"
             style={{
               width: 'clamp(180px, 25vw, 425px)',
@@ -200,7 +242,7 @@ export default function ProjectSelection() {
               className="flex flex-col items-center w-full mb-8"
               style={{ maxWidth: '750px', marginTop: '30px' }}
             >
-              <div className="flex flex-row items-center w-full gap-4">
+              <div className="flex flex-row items-center w-full" style={{ gap: 'clamp(16px, 2vw, 24px)' }}>
                 <input
                   type="text"
                   placeholder="Поиск проектов..."
@@ -349,7 +391,7 @@ export default function ProjectSelection() {
             className="bg-[#242528] border-2 border-[#1E80D9] rounded-3xl p-8 sm:p-10 md:p-12 relative"
             style={{
               width: '100%',
-              maxWidth: '750px',
+              maxWidth: '1000px',
               minWidth: '320px',
               margin: '20px',
               animation: 'fadeIn 0.3s ease-in-out',
@@ -377,11 +419,11 @@ export default function ProjectSelection() {
                 value={newProject.key}
                 onChange={(e) => setNewProject({ ...newProject, key: e.target.value })}
                 required
-                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200"
+                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
                 style={{
                   height: 'clamp(70px, 8vw, 90px)',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(28px, 3vw, 36px)',
+                  fontSize: 'clamp(24px, 2.5vw, 32px)',
                   paddingLeft: 'clamp(32px, 4vw, 48px)',
                   paddingRight: 'clamp(32px, 4vw, 48px)',
                   backgroundColor: '#2A2D31',
@@ -396,11 +438,11 @@ export default function ProjectSelection() {
                 value={newProject.name}
                 onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
                 required
-                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200"
+                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
                 style={{
                   height: 'clamp(70px, 8vw, 90px)',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(28px, 3vw, 36px)',
+                  fontSize: 'clamp(24px, 2.5vw, 32px)',
                   paddingLeft: 'clamp(32px, 4vw, 48px)',
                   paddingRight: 'clamp(32px, 4vw, 48px)',
                   backgroundColor: '#2A2D31',
@@ -410,18 +452,21 @@ export default function ProjectSelection() {
 
               {/* Поле описания */}
               <textarea
+                ref={textareaRef}
                 placeholder="Описание проекта (необязательно)"
                 value={newProject.description}
-                onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200"
+                onChange={handleDescriptionChange}
+                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
                 style={{
                   minHeight: 'clamp(100px, 12vw, 150px)',
+                  maxHeight: '400px',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(24px, 2.5vw, 32px)',
+                  fontSize: 'clamp(20px, 2vw, 28px)',
                   padding: 'clamp(24px, 3vw, 36px)',
                   backgroundColor: '#2A2D31',
                   marginBottom: '30px',
-                  resize: 'vertical',
+                  resize: 'none',
+                  overflowY: 'auto',
                 }}
               />
 
@@ -438,7 +483,7 @@ export default function ProjectSelection() {
               )}
 
               {/* Кнопки */}
-              <div className="flex flex-row gap-4 justify-center mt-4">
+              <div className="flex flex-row justify-center mt-4" style={{ gap: 'clamp(16px, 2vw, 24px)' }}>
                 <button
                   type="button"
                   onClick={handleCloseModal}
@@ -506,6 +551,9 @@ export default function ProjectSelection() {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        .create-project-input::placeholder {
+          font-size: clamp(18px, 2vw, 24px) !important;
         }
       `}</style>
     </>
