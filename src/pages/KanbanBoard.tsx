@@ -59,11 +59,11 @@ function TaskCard({ task, onEdit }: TaskCardProps) {
           }}
         />
       </div>
-      
+
       {task.description && (
         <div className="text-[#838486] mb-2" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
           {task.description}
-        </div>
+      </div>
       )}
 
       <div className="flex items-center justify-between mt-3">
@@ -232,7 +232,13 @@ export default function KanbanBoard() {
       if (err instanceof TypeError && err.message.includes('fetch')) {
         message = 'Ошибка сети. Проверьте подключение к серверу и убедитесь, что бэкенд запущен.';
       } else if (isStatusApiError(err)) {
-        message = (err as ApiError).payload?.message || err.message || message;
+        const apiError = err as ApiError;
+        // Если статус 500, это ошибка на бэкенде
+        if (apiError.status === 500) {
+          message = apiError.payload?.message || 'Ошибка на сервере (500). Проверьте логи бэкенда. Возможные причины:\n- Неправильные данные в запросе\n- Ошибка в коде бэкенда\n- Проблемы с базой данных';
+        } else {
+          message = apiError.payload?.message || apiError.message || message;
+        }
       } else if (err instanceof Error) {
         message = err.message;
       }
@@ -269,11 +275,11 @@ export default function KanbanBoard() {
               }}
             >
               {project.name.toUpperCase()}
-            </div>
+        </div>
 
             {/* Поиск */}
             <div className="flex items-center" style={{ gap: 'clamp(8px, 1vw, 12px)' }}>
-              <input
+            <input
                 type="text"
                 placeholder="найти таску"
                 value={searchQuery}
@@ -415,7 +421,7 @@ export default function KanbanBoard() {
         {!loadingStatuses && statuses.length === 0 && (
           <div className="flex flex-col items-center justify-center w-full" style={{ gap: '20px', padding: '40px' }}>
             <div className="text-[#A1A1A4]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-              Колонки не найдены. Создайте первую колонку.
+            Колонки не найдены. Создайте первую колонку.
             </div>
             <button
               onClick={() => setIsStatusModalOpen(true)}
@@ -475,15 +481,15 @@ export default function KanbanBoard() {
             >
               {/* Задачи */}
               <div className="flex-1">
-                {(tasksByStatus[status.id] || []).map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onEdit={handleOpenModal}
-                  />
-                ))}
+              {(tasksByStatus[status.id] || []).map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onEdit={handleOpenModal}
+                />
+              ))}
 
-                {(tasksByStatus[status.id] || []).length === 0 && (
+              {(tasksByStatus[status.id] || []).length === 0 && (
                   <div
                     className="text-[#838486] text-center"
                     style={{
@@ -492,8 +498,8 @@ export default function KanbanBoard() {
                     }}
                   >
                     Нет задач
-                  </div>
-                )}
+                </div>
+              )}
               </div>
 
               {/* Кнопка добавления задачи в колонку */}

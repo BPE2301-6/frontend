@@ -93,9 +93,11 @@ export default function ProjectSelection() {
       return;
     }
 
-    // Получаем актуальное состояние пользователя
-    const currentUser = useAuthStore.getState().user;
+    // Используем user из хука, который уже подписан на изменения состояния
+    // Также получаем актуальное состояние на случай, если хук не успел обновиться
+    const currentUser = user || useAuthStore.getState().user;
     if (!currentUser || !currentUser.id) {
+      console.error('User state:', { user, isAuthenticated, storeUser: useAuthStore.getState().user });
       setCreateError('Пользователь не авторизован. Пожалуйста, войдите в систему.');
       return;
     }

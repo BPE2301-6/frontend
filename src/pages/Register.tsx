@@ -4,7 +4,7 @@ import { useAuthStore } from '@entities/auth/useAuthStore';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register, login, loading, error } = useAuthStore();
+  const { register, loading, error } = useAuthStore();
   const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,10 +36,8 @@ export default function Register() {
       const email = loginValue.includes('@') ? loginValue : `${loginValue}@example.com`;
       const name = loginValue;
       
-      // Регистрация
+      // Регистрация (автоматически логинит пользователя)
       await register(email, password, name);
-      // После регистрации автоматически логинимся
-      await login(email, password);
       navigate('/projects');
     } catch (err) {
       console.error('Register error:', err);

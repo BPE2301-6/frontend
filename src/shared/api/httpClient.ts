@@ -115,8 +115,28 @@ export async function httpRequest<T = unknown>(
     } catch {
       payload = null;
     }
+    
+    // Если статус 500, это ошибка на бэкенде
+    let errorMessage = payload?.message || `API error: ${response.status}`;
+    if (response.status === 500) {
+      errorMessage = payload?.message || 'Ошибка на сервере (500). Проверьте логи бэкенда или обратитесь к администратору.';
+    } else if (response.status === 404) {
+      errorMessage = payload?.message || 'Ресурс не найден (404).';
+    } else if (response.status === 401) {
+      errorMessage = payload?.message || 'Не авторизован (401). Войдите в систему.';
+    } else if (response.status === 403) {
+      errorMessage = payload?.message || 'Доступ запрещен (403).';
+    }
+    
+    console.error('API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      url,
+      payload,
+    });
+    
     throw new ApiError(
-      payload?.message || `API error: ${response.status}`,
+      errorMessage,
       response.status,
       payload,
     );
