@@ -25,6 +25,21 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
     }
   }, [isOpen, user]);
 
+  // Автоскрытие ошибок и успешных сообщений
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const handleSave = async () => {
     if (!user) return;
     
@@ -40,10 +55,6 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
       
       useAuthStore.getState().setUser(updatedUser);
       setSuccess('Профиль успешно обновлен');
-      
-      setTimeout(() => {
-        setSuccess('');
-      }, 3000);
     } catch (err) {
       const message =
         (err instanceof ApiError && err.payload?.message) ||
@@ -63,30 +74,47 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   if (!isOpen || !user) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 font-montserrat"
+    <div 
+      className="fixed inset-0 flex items-center justify-center"
       style={{
-        animation: 'fadeIn 0.3s ease-in-out',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 9999,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
       }}
       onClick={onClose}
     >
       <div
-        className="bg-[#242528] border-2 border-[#1E80D9] rounded-3xl p-8 sm:p-10 md:p-12 relative"
+        className="bg-[#242528] border border-[#1E80D9] relative"
         style={{
-          width: '100%',
-          maxWidth: '600px',
-          minWidth: '320px',
-          margin: '20px',
-          animation: 'fadeIn 0.3s ease-in-out',
+          width: 'clamp(500px, 50vw, 535px)',
+          maxWidth: '90vw',
+          borderRadius: '50px',
+          padding: 'clamp(30px, 4vw, 40px)',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          position: 'relative',
+          zIndex: 10000,
+          scrollbarWidth: 'none', // Firefox
+          msOverflowStyle: 'none', // IE/Edge
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        <style>{`
+          div::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+          }
+        `}</style>
+
         {/* Заголовок */}
         <h2
-          className="font-bold leading-tight mb-8 text-center"
+          className="font-bold text-white mb-8 text-center"
           style={{
-            fontSize: 'clamp(36px, 4vw, 48px)',
-            color: '#FF8800',
+            fontSize: 'clamp(20px, 2.5vw, 24px)',
           }}
         >
           Профиль пользователя
@@ -122,68 +150,81 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         </div>
 
         {/* Информация */}
-        <div className="mb-6">
+        <div className="mb-8">
           <div
-            className="text-white mb-4"
+            className="text-white mb-6"
             style={{
-              fontSize: 'clamp(20px, 2.5vw, 28px)',
+              fontSize: 'clamp(16px, 2vw, 20px)',
             }}
           >
             <strong style={{ color: '#1E80D9' }}>Email:</strong> {user.email}
           </div>
           <div
-            className="text-white mb-4"
+            className="text-white mb-6"
             style={{
-              fontSize: 'clamp(20px, 2.5vw, 28px)',
+              fontSize: 'clamp(16px, 2vw, 20px)',
             }}
           >
             <strong style={{ color: '#1E80D9' }}>ID:</strong>{' '}
-            <span style={{ fontSize: 'clamp(16px, 2vw, 22px)' }}>{user.id}</span>
+            <span style={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }}>{user.id}</span>
           </div>
         </div>
 
         {/* Форма редактирования */}
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Имя"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200"
-            style={{
-              height: 'clamp(60px, 7vw, 80px)',
-              borderRadius: '9999px',
-              fontSize: 'clamp(24px, 2.5vw, 32px)',
-              paddingLeft: 'clamp(32px, 4vw, 48px)',
-              paddingRight: 'clamp(32px, 4vw, 48px)',
-              backgroundColor: '#2A2D31',
-              marginBottom: '20px',
-            }}
-          />
+        <div className="mb-8">
+          <div className="mb-6">
+            <label
+              className="block text-white font-medium mb-3"
+              style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+            >
+              Имя
+            </label>
+            <input
+              type="text"
+              placeholder="Имя"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full text-white placeholder:text-gray-400 outline-none"
+              style={{
+                backgroundColor: '#313236',
+                borderRadius: '15px',
+                padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                fontSize: 'clamp(16px, 2vw, 20px)',
+                border: 'none',
+              }}
+            />
+          </div>
 
-          <input
-            type="url"
-            placeholder="URL аватара (необязательно)"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200"
-            style={{
-              height: 'clamp(60px, 7vw, 80px)',
-              borderRadius: '9999px',
-              fontSize: 'clamp(24px, 2.5vw, 32px)',
-              paddingLeft: 'clamp(32px, 4vw, 48px)',
-              paddingRight: 'clamp(32px, 4vw, 48px)',
-              backgroundColor: '#2A2D31',
-            }}
-          />
+          <div>
+            <label
+              className="block text-white font-medium mb-3"
+              style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+            >
+              URL аватара (необязательно)
+            </label>
+            <input
+              type="url"
+              placeholder="URL аватара"
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              className="w-full text-white placeholder:text-gray-400 outline-none"
+              style={{
+                backgroundColor: '#313236',
+                borderRadius: '15px',
+                padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                fontSize: 'clamp(16px, 2vw, 20px)',
+                border: 'none',
+              }}
+            />
+          </div>
         </div>
 
         {/* Сообщения */}
         {error && (
           <div
-            className="text-[#FD5353] mb-4 text-center"
+            className="text-[#FD5353] mb-6 text-center"
             style={{
-              fontSize: 'clamp(18px, 2vw, 24px)',
+              fontSize: 'clamp(14px, 1.8vw, 18px)',
             }}
           >
             {error}
@@ -192,9 +233,9 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
         {success && (
           <div
-            className="text-[#62C53E] mb-4 text-center"
+            className="text-[#62C53E] mb-6 text-center"
             style={{
-              fontSize: 'clamp(18px, 2vw, 24px)',
+              fontSize: 'clamp(14px, 1.8vw, 18px)',
             }}
           >
             {success}
@@ -202,63 +243,55 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         )}
 
         {/* Кнопки */}
-        <div className="flex flex-col items-center" style={{ gap: 'clamp(16px, 2vw, 24px)' }}>
+        <div className="flex justify-center gap-6 mt-8">
           <button
             type="button"
             onClick={handleSave}
             disabled={loading}
-            className="text-white font-medium leading-tight lowercase disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-white font-bold disabled:opacity-50"
             style={{
-              width: '100%',
-              maxWidth: '400px',
-              height: 'clamp(70px, 8vw, 90px)',
-              borderRadius: '9999px',
+              width: 'clamp(140px, 16vw, 180px)',
+              height: 'clamp(45px, 5.5vw, 54px)',
+              borderRadius: '15px',
               backgroundColor: '#FF8800',
-              fontSize: 'clamp(28px, 3vw, 40px)',
+              fontSize: 'clamp(14px, 1.5vw, 16px)',
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
+              transition: 'background-color 0.3s ease',
             }}
             onMouseEnter={(e) => {
               if (!loading) {
                 e.currentTarget.style.backgroundColor = '#E67700';
-                e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 136, 0, 0.6)';
-                e.currentTarget.style.transform = 'scale(1.05)';
               }
             }}
             onMouseLeave={(e) => {
               if (!loading) {
                 e.currentTarget.style.backgroundColor = '#FF8800';
-                e.currentTarget.style.boxShadow = 'none';
-                e.currentTarget.style.transform = 'scale(1)';
               }
             }}
           >
-            {loading ? 'Сохранение...' : 'Сохранить изменения'}
+            {loading ? 'Сохранение...' : 'Сохранить'}
           </button>
 
           <button
             type="button"
             onClick={onClose}
-            className="text-white font-medium leading-tight lowercase"
+            className="text-white font-bold"
             style={{
-              width: '100%',
-              maxWidth: '400px',
-              height: 'clamp(70px, 8vw, 90px)',
-              borderRadius: '9999px',
-              backgroundColor: '#606060',
-              fontSize: 'clamp(28px, 3vw, 40px)',
+              width: 'clamp(140px, 16vw, 180px)',
+              height: 'clamp(45px, 5.5vw, 54px)',
+              borderRadius: '15px',
+              backgroundColor: '#838486',
+              fontSize: 'clamp(14px, 1.5vw, 16px)',
               border: 'none',
               cursor: 'pointer',
-              transition: 'background-color 0.3s ease, transform 0.3s ease',
+              transition: 'background-color 0.3s ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#505050';
-              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.backgroundColor = '#6A6A6A';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#606060';
-              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.backgroundColor = '#838486';
             }}
           >
             Закрыть
@@ -267,25 +300,22 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
           <button
             type="button"
             onClick={handleLogout}
-            className="text-white font-medium leading-tight lowercase"
+            className="text-white font-bold"
             style={{
-              width: '100%',
-              maxWidth: '400px',
-              height: 'clamp(70px, 8vw, 90px)',
-              borderRadius: '9999px',
+              width: 'clamp(140px, 16vw, 180px)',
+              height: 'clamp(45px, 5.5vw, 54px)',
+              borderRadius: '15px',
               backgroundColor: '#FD5353',
-              fontSize: 'clamp(28px, 3vw, 40px)',
+              fontSize: 'clamp(14px, 1.5vw, 16px)',
               border: 'none',
               cursor: 'pointer',
-              transition: 'background-color 0.3s ease, transform 0.3s ease',
+              transition: 'background-color 0.3s ease',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = '#E04444';
-              e.currentTarget.style.transform = 'scale(1.05)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '#FD5353';
-              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             Выйти
@@ -295,4 +325,3 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
     </div>
   );
 }
-

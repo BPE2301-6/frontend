@@ -1,4 +1,4 @@
-import { useState, FormEvent, ChangeEvent } from 'react';
+import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { StatusCreatePayload } from '@shared/api/types';
 
 interface StatusModalProps {
@@ -11,15 +11,27 @@ interface StatusModalProps {
 
 export default function StatusModal({ isOpen, onClose, onSave, isSaving, defaultPosition = 0 }: StatusModalProps) {
   const [name, setName] = useState('');
-  const [hasLimit, setHasLimit] = useState(false);
-  const [limit, setLimit] = useState('');
+  const [error, setError] = useState('');
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen) {
+      setName('');
+      setError('');
+    }
+  }, [isOpen]);
+
+  // Автоскрытие ошибок
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) {
-      alert('Введите название колонки');
+      setError('Введите название колонки');
       return;
     }
 
@@ -31,15 +43,15 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
 
     try {
       await onSave(payload);
-      // Очищаем форму только после успешного сохранения
       setName('');
-      setHasLimit(false);
-      setLimit('');
+      setError('');
     } catch (error) {
-      // Ошибка уже обработана в handleCreateStatus
-      // Не очищаем форму, чтобы пользователь мог исправить данные
+      const message = error instanceof Error ? error.message : 'Ошибка создания колонки';
+      setError(message);
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div 
@@ -67,12 +79,20 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
           overflowY: 'auto',
           position: 'relative',
           zIndex: 10000,
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        <style>{`
+          div::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+
         {/* Заголовок */}
         <h2
-          className="font-bold text-white mb-6"
+          className="font-bold text-white mb-8 text-center"
           style={{
             fontSize: 'clamp(20px, 2.5vw, 24px)',
           }}
@@ -80,14 +100,14 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
           Добавить колонку
         </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit}>
           {/* Название */}
-          <div>
+          <div className="mb-8">
             <label
-              className="block text-white font-medium mb-2"
+              className="block text-white font-medium mb-4"
               style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
             >
-              название
+              Название колонки
             </label>
             <input
               type="text"
@@ -95,7 +115,7 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
               style={{
                 backgroundColor: '#313236',
                 borderRadius: '15px',
-                padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
                 fontSize: 'clamp(16px, 2vw, 20px)',
                 border: 'none',
               }}
@@ -107,90 +127,26 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
             />
           </div>
 
-          {/* Ограничение по количеству */}
-          <div>
-            <label
-              className="block text-white font-medium mb-3"
-              style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+          {/* Сообщение об ошибке */}
+          {error && (
+            <div
+              className="text-[#FD5353] mb-6 text-center"
+              style={{
+                fontSize: 'clamp(14px, 1.8vw, 18px)',
+              }}
             >
-              ограничение по количеству
-            </label>
-            <div className="flex items-center gap-6">
-              <button
-                type="button"
-                onClick={() => setHasLimit(true)}
-                className="text-white font-medium"
-                style={{
-                  width: 'clamp(100px, 12vw, 129px)',
-                  height: 'clamp(35px, 4vw, 40px)',
-                  borderRadius: '15px',
-                  backgroundColor: hasLimit ? '#1E80D9' : '#313236',
-                  fontSize: 'clamp(16px, 2vw, 20px)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                }}
-              >
-                да
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setHasLimit(false);
-                  setLimit('');
-                }}
-                className="text-white font-medium"
-                style={{
-                  width: 'clamp(100px, 12vw, 129px)',
-                  height: 'clamp(35px, 4vw, 40px)',
-                  borderRadius: '15px',
-                  backgroundColor: !hasLimit ? '#1E80D9' : '#313236',
-                  fontSize: 'clamp(16px, 2vw, 20px)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                }}
-              >
-                нет
-              </button>
-            </div>
-          </div>
-
-          {/* Количество */}
-          {hasLimit && (
-            <div>
-              <label
-                className="block text-white font-medium mb-2"
-                style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
-              >
-                количество
-              </label>
-              <input
-                type="number"
-                min="1"
-                className="w-full text-white placeholder:text-gray-400 outline-none"
-                style={{
-                  backgroundColor: '#313236',
-                  borderRadius: '15px',
-                  padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
-                  fontSize: 'clamp(16px, 2vw, 20px)',
-                  border: 'none',
-                }}
-                placeholder="Количество задач"
-                value={limit}
-                onChange={(e) => setLimit(e.target.value)}
-              />
+              {error}
             </div>
           )}
 
           {/* Кнопки */}
-          <div className="flex justify-end gap-4 mt-6">
+          <div className="flex justify-center gap-6 mt-10">
             <button
               type="button"
               onClick={onClose}
               className="text-white font-bold"
               style={{
-                width: 'clamp(100px, 12vw, 122px)',
+                width: 'clamp(140px, 16vw, 180px)',
                 height: 'clamp(45px, 5.5vw, 54px)',
                 borderRadius: '15px',
                 backgroundColor: '#838486',
@@ -213,7 +169,7 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
               disabled={isSaving}
               className="text-white font-bold disabled:opacity-50"
               style={{
-                width: 'clamp(100px, 12vw, 122px)',
+                width: 'clamp(140px, 16vw, 180px)',
                 height: 'clamp(45px, 5.5vw, 54px)',
                 borderRadius: '15px',
                 backgroundColor: '#FF8800',
@@ -241,4 +197,3 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
     </div>
   );
 }
-

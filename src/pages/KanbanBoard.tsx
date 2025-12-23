@@ -28,22 +28,79 @@ const formatDate = (value: string | null | undefined): string => {
   }
 };
 
-interface TaskCardProps {
-  task: Task;
-  onEdit: (task: Task) => void;
+interface ErrorDisplayProps {
+  error: Error | null;
 }
 
-function TaskCard({ task, onEdit }: TaskCardProps) {
-  const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
+function ErrorDisplay({ error }: ErrorDisplayProps) {
+  const [show, setShow] = useState(!!error);
+
+  useEffect(() => {
+    if (error) {
+      setShow(true);
+      const timer = setTimeout(() => setShow(false), 5000);
+      return () => clearTimeout(timer);
+    } else {
+      setShow(false);
+    }
+  }, [error]);
+
+  if (!show || !error) return null;
 
   return (
     <div
-      className="bg-[#313236] rounded-[32px] p-4 cursor-pointer hover:opacity-90 transition-opacity"
+      className="text-[#FD5353] text-center"
+      style={{
+        padding: '20px',
+        fontSize: 'clamp(16px, 2vw, 20px)',
+      }}
+    >
+      {error.message || 'Ошибка загрузки данных'}
+    </div>
+  );
+}
+
+interface TaskCardProps {
+  task: Task;
+  onEdit: (task: Task) => void;
+  onDelete: (taskId: string) => void;
+}
+
+function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+  const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Вы уверены, что хотите удалить эту задачу?')) {
+      onDelete(task.id);
+    }
+  };
+
+  return (
+    <div
+      className="bg-[#313236] rounded-[32px] p-4 cursor-pointer hover:opacity-90 transition-opacity relative"
       onClick={() => onEdit(task)}
       style={{
         marginBottom: 'clamp(16px, 2vw, 24px)',
       }}
     >
+      <button
+        onClick={handleDeleteClick}
+        className="absolute top-2 right-2 text-white hover:text-[#FD5353] transition-colors"
+        style={{
+          width: '24px',
+          height: '24px',
+          fontSize: '18px',
+          lineHeight: '1',
+          border: 'none',
+          backgroundColor: 'transparent',
+          cursor: 'pointer',
+          zIndex: 10,
+        }}
+        title="Удалить задачу"
+      >
+        ×
+      </button>
       <div className="flex items-start justify-between mb-2">
         <div className="font-medium text-white" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
           {task.title}
@@ -136,6 +193,7 @@ export default function KanbanBoard() {
     loading: loadingStatuses,
     error: statusesError,
     createStatus,
+    deleteStatus,
     isApiError: isStatusApiError,
   } = useStatuses(projectId);
 
@@ -146,6 +204,7 @@ export default function KanbanBoard() {
     setFilters: setTaskFilters,
     createTask,
     updateTask,
+    deleteTask: deleteTaskApi,
     isApiError: isTaskApiError,
   } = useTasks(projectId, { q: searchQuery });
 
@@ -218,11 +277,8 @@ export default function KanbanBoard() {
       return;
     }
     
-    console.log('Создание колонки:', { projectId, payload });
-    
     try {
-      const result = await createStatus(payload);
-      console.log('Колонка успешно создана:', result);
+      await createStatus(payload);
       setIsStatusModalOpen(false);
     } catch (err) {
       let message = 'Ошибка создания колонки';
@@ -235,9 +291,30 @@ export default function KanbanBoard() {
         message = err.message;
       }
       
-      console.error('Ошибка создания колонки:', err);
       alert(message);
       throw err;
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await deleteTaskApi(taskId);
+    } catch (err) {
+      const message =
+        (isTaskApiError(err) && (err as ApiError).payload?.message) ||
+        (err instanceof Error ? err.message : 'Ошибка удаления задачи');
+      alert(message);
+    }
+  };
+
+  const handleDeleteStatus = async (statusId: string) => {
+    try {
+      await deleteStatus(statusId);
+    } catch (err) {
+      const message =
+        (isStatusApiError(err) && (err as ApiError).payload?.message) ||
+        (err instanceof Error ? err.message : 'Ошибка удаления колонки');
+      alert(message);
     }
   };
 
@@ -382,18 +459,8 @@ export default function KanbanBoard() {
         </div>
       </header>
 
-      {/* Ошибки */}
-      {(tasksError || statusesError) && (
-        <div
-          className="text-[#FD5353] text-center"
-          style={{
-            padding: '20px',
-            fontSize: 'clamp(16px, 2vw, 20px)',
-          }}
-        >
-          {(tasksError || statusesError)?.message || 'Ошибка загрузки данных'}
-        </div>
-      )}
+      {/* Ошибки с автоскрытием */}
+      <ErrorDisplay error={tasksError || statusesError} />
 
       {/* Колонки */}
       <div
@@ -448,15 +515,38 @@ export default function KanbanBoard() {
               maxWidth: 'clamp(300px, 25vw, 372px)',
             }}
           >
-            {/* Название колонки */}
+            {/* Название колонки с кнопкой удаления */}
             <div
-              className="text-white font-normal mb-4"
+              className="flex items-center justify-between mb-4"
               style={{
-                fontSize: 'clamp(20px, 2.5vw, 24px)',
                 paddingLeft: 'clamp(10px, 1.5vw, 20px)',
+                paddingRight: 'clamp(10px, 1.5vw, 20px)',
               }}
             >
-              {status.name}
+              <div
+                className="text-white font-normal"
+                style={{
+                  fontSize: 'clamp(20px, 2.5vw, 24px)',
+                }}
+              >
+                {status.name}
+              </div>
+              <button
+                onClick={() => handleDeleteStatus(status.id)}
+                className="text-white hover:text-[#FD5353] transition-colors"
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  fontSize: '20px',
+                  lineHeight: '1',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                }}
+                title="Удалить колонку"
+              >
+                ×
+              </button>
             </div>
 
             {/* Колонка с задачами */}
@@ -478,6 +568,7 @@ export default function KanbanBoard() {
                     key={task.id}
                     task={task}
                     onEdit={handleOpenModal}
+                    onDelete={handleDeleteTask}
                   />
                 ))}
 

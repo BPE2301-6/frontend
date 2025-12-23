@@ -29,24 +29,25 @@ export default function App() {
         >
           <button
             onClick={() => setShowProfileModal(true)}
-            className="cursor-pointer transition-transform duration-300 hover:scale-110"
+            className="cursor-pointer transition-transform duration-300 hover:scale-110 rounded-full overflow-hidden"
             style={{
               width: 'clamp(50px, 6vw, 70px)',
               height: 'clamp(50px, 6vw, 70px)',
+              borderRadius: '50%',
             }}
           >
             {user.avatar_url ? (
               <img
                 src={user.avatar_url}
                 alt={user.name}
-                className="w-full h-full rounded-full object-cover border-2 border-[#1E80D9]"
+                className="w-full h-full object-cover border-2 border-[#1E80D9] rounded-full"
                 style={{
                   boxShadow: '0 0 20px rgba(30, 128, 217, 0.5)',
                 }}
               />
             ) : (
               <div
-                className="w-full h-full rounded-full flex items-center justify-center text-white font-bold border-2 border-[#1E80D9]"
+                className="w-full h-full flex items-center justify-center text-white font-bold border-2 border-[#1E80D9] rounded-full"
                 style={{
                   backgroundColor: '#1E80D9',
                   fontSize: 'clamp(24px, 3vw, 36px)',
