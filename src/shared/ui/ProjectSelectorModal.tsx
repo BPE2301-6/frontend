@@ -4,6 +4,8 @@ import { projectsApi } from '@shared/api/projects';
 import { projectMembersApi } from '@shared/api/projectMembers';
 import { Project, ProjectRole } from '@shared/api/types';
 import { useAuthStore } from '@entities/auth/useAuthStore';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
+import { ApiError } from '@shared/api/httpClient';
 
 interface ProjectSelectorModalProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ export default function ProjectSelectorModal({
   const [projects, setProjects] = useState<ProjectWithRole[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen || !user) {
@@ -128,6 +131,59 @@ export default function ProjectSelectorModal({
   const handleCreateProject = () => {
     navigate('/projects');
     onClose();
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      await projectsApi.delete(projectId);
+      setDeleteProjectId(null);
+      
+      // Если удаленный проект был текущим, перенаправляем на страницу выбора проектов
+      if (projectId === currentProjectId) {
+        navigate('/projects');
+        onClose();
+      } else {
+        // Обновляем список проектов
+        const response = await projectsApi.list({ limit: 50 });
+        const allProjects = response.items || [];
+        
+        const projectsWithRoles: ProjectWithRole[] = [];
+        
+        for (const project of allProjects) {
+          let userRole: ProjectRole | undefined = undefined;
+          
+          if (project.lead_id === user?.id) {
+            userRole = 'OWNER';
+          } else {
+            try {
+              const members = await projectMembersApi.list(project.id);
+              const userMember = members.find(m => m.user_id === user?.id);
+              
+              if (userMember && (userMember.role === 'MEMBER' || userMember.role === 'OWNER')) {
+                userRole = userMember.role;
+              }
+            } catch (memberErr) {
+              console.error(`Ошибка загрузки участников проекта ${project.id}:`, memberErr);
+            }
+          }
+          
+          if (userRole) {
+            projectsWithRoles.push({
+              ...project,
+              userRole: userRole,
+            });
+          }
+        }
+        
+        setProjects(projectsWithRoles);
+      }
+    } catch (err) {
+      const message =
+        (err instanceof ApiError && err.payload?.message) ||
+        (err instanceof Error ? err.message : 'Ошибка удаления проекта');
+      setError(message);
+      setDeleteProjectId(null);
+    }
   };
 
   if (!isOpen) return null;
@@ -312,6 +368,31 @@ export default function ProjectSelectorModal({
                           {proj.userRole === 'OWNER' ? 'Владелец' : 'Участник'}
                         </div>
                       )}
+                      {proj.userRole === 'OWNER' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteProjectId(proj.id);
+                          }}
+                          className="text-white hover:text-[#FD5353] transition-colors"
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            fontSize: '20px',
+                            lineHeight: '1',
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                          title="Удалить проект"
+                        >
+                          ×
+                        </button>
+                      )}
                       {proj.id === currentProjectId && (
                         <div
                           style={{
@@ -358,6 +439,14 @@ export default function ProjectSelectorModal({
           </button>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteProjectId}
+        onClose={() => setDeleteProjectId(null)}
+        onConfirm={() => deleteProjectId && handleDeleteProject(deleteProjectId)}
+        title="Удалить проект?"
+        message="Вы уверены, что хотите удалить этот проект? Это действие нельзя отменить. Все участники потеряют доступ к проекту."
+      />
     </div>
   );
 }
