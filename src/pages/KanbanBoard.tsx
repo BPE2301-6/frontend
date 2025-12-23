@@ -4,6 +4,7 @@ import TaskModal from './TaskModal';
 import StatusModal from './StatusModal';
 import UserProfileModal from '@shared/ui/UserProfileModal';
 import ConfirmDeleteModal from '@shared/ui/ConfirmDeleteModal';
+import AddMemberModal from '@shared/ui/AddMemberModal';
 import { useStatuses } from '@entities/statuses/useStatuses';
 import { useTasks } from '@entities/tasks/useTasks';
 import { useAuthStore } from '@entities/auth/useAuthStore';
@@ -81,10 +82,12 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
 
   return (
     <div
-      className="bg-[#313236] rounded-[32px] p-4 cursor-pointer hover:opacity-90 transition-opacity relative"
+      className="bg-[#313236] rounded-[32px] cursor-pointer hover:opacity-90 transition-opacity relative"
       onClick={() => onEdit(task)}
       style={{
         marginBottom: 'clamp(16px, 2vw, 24px)',
+        padding: 'clamp(16px, 2vw, 20px)',
+        width: '100%',
       }}
     >
       <button
@@ -104,42 +107,46 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
       >
         ×
       </button>
-      <div className="flex items-start justify-between mb-2">
-        <div className="font-medium text-white" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
+
+      {/* Заголовок и приоритет */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="font-medium text-white flex-1 pr-2" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)', lineHeight: '1.4' }}>
           {task.title}
         </div>
         <div
           style={{
-            width: '17px',
-            height: '17px',
+            width: '12px',
+            height: '12px',
             borderRadius: '50%',
             backgroundColor: priorityColor,
             flexShrink: 0,
-            marginLeft: '8px',
           }}
         />
       </div>
-      
+
+      {/* Описание */}
       {task.description && (
-        <div className="text-[#838486] mb-2" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
+        <div className="text-[#838486] mb-3" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)', lineHeight: '1.4' }}>
           {task.description}
         </div>
       )}
 
-      {/* Теги */}
+      {/* Теги - маленьким шрифтом под задачей */}
       {task.tag_ids && task.tag_ids.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 mt-2">
+        <div className="flex flex-wrap gap-1 mb-3">
           {task.tag_ids.map((tagId) => {
             const tag = tags.find((t) => t.id === tagId);
             if (!tag) return null;
             return (
               <span
                 key={tagId}
-                className="px-2 py-1 rounded-full text-xs font-medium"
+                className="px-1.5 py-0.5 rounded-full"
                 style={{
                   backgroundColor: tag.color || '#1E80D9',
                   color: '#FFFFFF',
-                  fontSize: 'clamp(10px, 1.2vw, 12px)',
+                  fontSize: 'clamp(9px, 1vw, 11px)',
+                  fontWeight: '500',
+                  lineHeight: '1.2',
                 }}
               >
                 {tag.name}
@@ -149,23 +156,28 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
         </div>
       )}
 
-      <div className="flex items-center justify-between mt-3">
-        <div className="text-[#838486]" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
+      {/* Разделитель */}
+      <div style={{ height: '1px', backgroundColor: '#404040', marginBottom: '12px' }} />
+
+      {/* Ключ задачи и дедлайн */}
+      <div className="flex items-center justify-between">
+        <div className="text-[#838486]" style={{ fontSize: 'clamp(11px, 1.2vw, 13px)' }}>
           {task.key}
         </div>
         {task.due_date && (
-          <div className="text-[#838486]" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
+          <div className="text-[#838486]" style={{ fontSize: 'clamp(11px, 1.2vw, 13px)' }}>
             {formatDate(task.due_date)}
           </div>
         )}
       </div>
 
+      {/* Исполнитель */}
       {task.assignee_id && (
-        <div className="flex justify-end mt-3">
+        <div className="flex justify-end mt-2">
           <div
             style={{
-              width: '36px',
-              height: '36px',
+              width: '28px',
+              height: '28px',
               borderRadius: '50%',
               backgroundColor: '#FFFFFF',
               display: 'flex',
@@ -175,10 +187,10 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
           >
             <div
               style={{
-                width: '20px',
-                height: '20px',
+                width: '16px',
+                height: '16px',
                 borderRadius: '50%',
-                border: '4px solid #757575',
+                border: '3px solid #757575',
               }}
             />
           </div>
@@ -200,6 +212,7 @@ export default function KanbanBoard() {
   const [selectedStatusId, setSelectedStatusId] = useState<string | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [deleteStatusId, setDeleteStatusId] = useState<string | null>(null);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
 
@@ -237,7 +250,10 @@ export default function KanbanBoard() {
     isApiError: isTaskApiError,
   } = useTasks(projectId, { q: searchQuery });
 
-  const { users: projectMembers } = useProjectMembers(projectId);
+  const { users: projectMembers, reload: reloadMembers } = useProjectMembers(projectId);
+  
+  // Фильтруем участников, исключая текущего пользователя из отображения (он уже показан как иконка профиля)
+  const displayMembers = projectMembers.filter(m => m.id !== user?.id);
   const [tags, setTags] = useState<Tag[]>([]);
 
   useEffect(() => {
@@ -479,6 +495,146 @@ export default function KanbanBoard() {
               +
             </button>
 
+            {/* Участники проекта */}
+            {displayMembers.length > 0 && (
+              <div className="flex items-center" style={{ marginLeft: 'clamp(12px, 2vw, 20px)', gap: '0' }}>
+                {displayMembers.slice(0, 3).map((member, index) => (
+                  <div
+                    key={member.id}
+                    style={{
+                      width: 'clamp(40px, 5vw, 50px)',
+                      height: 'clamp(40px, 5vw, 50px)',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      marginLeft: index > 0 ? '-8px' : '0',
+                      border: '2px solid #242528',
+                      zIndex: 10 - index,
+                      position: 'relative',
+                      aspectRatio: '1 / 1',
+                      flexShrink: 0,
+                    }}
+                    title={member.name || member.email}
+                  >
+                    {member.avatar_url ? (
+                      <img
+                        src={member.avatar_url}
+                        alt={member.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                          display: 'block',
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: '50%',
+                          backgroundColor: '#1E80D9',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#FFFFFF',
+                          fontWeight: 'bold',
+                          fontSize: 'clamp(16px, 2vw, 20px)',
+                        }}
+                      >
+                        {member.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {displayMembers.length > 3 && (
+                  <div
+                    style={{
+                      width: 'clamp(40px, 5vw, 50px)',
+                      height: 'clamp(40px, 5vw, 50px)',
+                      borderRadius: '50%',
+                      backgroundColor: '#313236',
+                      border: '2px solid #242528',
+                      marginLeft: '-8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      fontWeight: 'bold',
+                      fontSize: 'clamp(12px, 1.5vw, 16px)',
+                      zIndex: 0,
+                      flexShrink: 0,
+                    }}
+                    title={`Еще ${displayMembers.length - 3} участников`}
+                  >
+                    +{displayMembers.length - 3}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowAddMemberModal(true)}
+                  className="flex items-center justify-center text-white font-bold"
+                  style={{
+                    width: 'clamp(40px, 5vw, 50px)',
+                    height: 'clamp(40px, 5vw, 50px)',
+                    borderRadius: '50%',
+                    backgroundColor: '#1E80D9',
+                    fontSize: 'clamp(20px, 2.5vw, 24px)',
+                    lineHeight: '1',
+                    border: '2px solid #242528',
+                    cursor: 'pointer',
+                    marginLeft: displayMembers.length > 0 ? '-8px' : '0',
+                    transition: 'background-color 0.3s ease, transform 0.3s ease',
+                    flexShrink: 0,
+                    aspectRatio: '1 / 1',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#166BB7';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#1E80D9';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  title="Добавить участника"
+                >
+                  +
+                </button>
+              </div>
+            )}
+
+            {/* Кнопка добавления участника (если участников нет) */}
+            {displayMembers.length === 0 && (
+              <button
+                onClick={() => setShowAddMemberModal(true)}
+                className="flex items-center justify-center text-white font-bold"
+                style={{
+                  width: 'clamp(40px, 5vw, 50px)',
+                  height: 'clamp(40px, 5vw, 50px)',
+                  borderRadius: '50%',
+                  backgroundColor: '#1E80D9',
+                  fontSize: 'clamp(20px, 2.5vw, 24px)',
+                  lineHeight: '1',
+                  border: 'none',
+                  cursor: 'pointer',
+                  marginLeft: 'clamp(12px, 2vw, 20px)',
+                  transition: 'background-color 0.3s ease, transform 0.3s ease',
+                  flexShrink: 0,
+                  aspectRatio: '1 / 1',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#166BB7';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1E80D9';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                title="Добавить участника"
+              >
+                +
+              </button>
+            )}
+
             {/* Аватар пользователя - круглый, в правом углу */}
             {user && (
               <button
@@ -591,8 +747,8 @@ export default function KanbanBoard() {
             key={status.id}
             className="flex-1 flex flex-col"
             style={{
-              minWidth: 'clamp(300px, 25vw, 372px)',
-              maxWidth: 'clamp(300px, 25vw, 372px)',
+              minWidth: 'clamp(320px, 28vw, 400px)',
+              maxWidth: 'clamp(320px, 28vw, 400px)',
             }}
           >
             {/* Название колонки с кнопкой удаления */}
@@ -740,6 +896,16 @@ export default function KanbanBoard() {
         onConfirm={() => deleteTaskId && handleDeleteTask(deleteTaskId)}
         title="Удалить задачу?"
         message="Вы уверены, что хотите удалить эту задачу?"
+      />
+
+      <AddMemberModal
+        isOpen={showAddMemberModal}
+        onClose={() => setShowAddMemberModal(false)}
+        projectId={projectId || ''}
+        existingMemberIds={projectMembers.map(m => m.id)}
+        onMemberAdded={() => {
+          reloadMembers();
+        }}
       />
     </div>
   );
