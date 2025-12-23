@@ -428,7 +428,7 @@ export default function KanbanBoard() {
           </div>
 
           {/* Правая часть: кнопка добавления колонки, плюсик и аватар */}
-          <div className="flex items-center" style={{ gap: 'clamp(12px, 2vw, 20px)' }}>
+          <div className="flex items-center" style={{ gap: 'clamp(12px, 2vw, 20px)', marginLeft: 'clamp(24px, 3vw, 40px)' }}>
             {/* Кнопка добавления колонки */}
             <button
               onClick={() => setIsStatusModalOpen(true)}
@@ -531,7 +531,7 @@ export default function KanbanBoard() {
         className="flex items-start"
         style={{
           padding: 'clamp(40px, 5vw, 55px)',
-          paddingTop: `calc(clamp(40px, 5vw, 55px) + clamp(120px, 15vh, 148px))`,
+          paddingTop: `calc(clamp(20px, 2.5vw, 30px) + clamp(120px, 15vh, 148px))`,
           gap: 'clamp(20px, 3vw, 30px)',
           minHeight: 'calc(100vh - clamp(120px, 15vh, 148px))',
         }}
