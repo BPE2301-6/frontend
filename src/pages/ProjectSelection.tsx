@@ -23,11 +23,27 @@ export default function ProjectSelection() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const limit = 20;
 
+  const {
+    projects,
+    loading,
+    error,
+    setFilters,
+    createProject,
+    isApiError,
+    pagination,
+  } = useProjects({ search: searchQuery, limit, offset: (currentPage - 1) * limit });
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
+      return;
     }
-  }, [isAuthenticated, navigate]);
+
+    // Если проекты загружены и их больше 0, перенаправляем на первый проект
+    if (!loading && projects.length > 0 && !viewMode && !showCreateModal) {
+      navigate(`/board?projectId=${projects[0].id}`);
+    }
+  }, [isAuthenticated, navigate, loading, projects, viewMode, showCreateModal]);
 
   // Автоматическое изменение высоты textarea
   useEffect(() => {
@@ -60,16 +76,6 @@ export default function ProjectSelection() {
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
   };
-
-  const {
-    projects,
-    loading,
-    error,
-    setFilters,
-    createProject,
-    isApiError,
-    pagination,
-  } = useProjects({ search: searchQuery, limit, offset: (currentPage - 1) * limit });
 
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

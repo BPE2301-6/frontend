@@ -27,6 +27,13 @@ export const setTokenGetter = (fn: () => string | null): void => {
   getToken = fn;
 };
 
+// Функция для установки временного токена (для использования в процессе авторизации)
+let tempToken: string | null = null;
+
+export const setTempToken = (token: string | null): void => {
+  tempToken = token;
+};
+
 interface QueryParams {
   [key: string]: string | number | boolean | string[] | undefined | null;
 }
@@ -75,7 +82,8 @@ export async function httpRequest<T = unknown>(
   path: string,
   { method = 'GET', body, query, signal }: HttpRequestOptions = {}
 ): Promise<T> {
-  const token = getToken();
+  // Используем временный токен если он установлен, иначе получаем из store
+  const token = tempToken || getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -115,28 +123,8 @@ export async function httpRequest<T = unknown>(
     } catch {
       payload = null;
     }
-    
-    // Если статус 500, это ошибка на бэкенде
-    let errorMessage = payload?.message || `API error: ${response.status}`;
-    if (response.status === 500) {
-      errorMessage = payload?.message || 'Ошибка на сервере (500). Проверьте логи бэкенда или обратитесь к администратору.';
-    } else if (response.status === 404) {
-      errorMessage = payload?.message || 'Ресурс не найден (404).';
-    } else if (response.status === 401) {
-      errorMessage = payload?.message || 'Не авторизован (401). Войдите в систему.';
-    } else if (response.status === 403) {
-      errorMessage = payload?.message || 'Доступ запрещен (403).';
-    }
-    
-    console.error('API Error:', {
-      status: response.status,
-      statusText: response.statusText,
-      url,
-      payload,
-    });
-    
     throw new ApiError(
-      errorMessage,
+      payload?.message || `API error: ${response.status}`,
       response.status,
       payload,
     );
