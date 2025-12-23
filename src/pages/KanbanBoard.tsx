@@ -257,8 +257,11 @@ export default function KanbanBoard() {
     isApiError: isTaskApiError,
   } = useTasks(projectId, { q: searchQuery });
 
-  const { users: projectMembers, reload: reloadMembers } = useProjectMembers(projectId);
+  const { users: projectMembers, members: projectMembersData, reload: reloadMembers } = useProjectMembers(projectId);
   const [tags, setTags] = useState<Tag[]>([]);
+  
+  // Получаем роль текущего пользователя в проекте
+  const currentUserRole = projectMembersData.find(m => m.user_id === user?.id)?.role;
 
   useEffect(() => {
     if (!projectId) return;
@@ -646,25 +649,39 @@ export default function KanbanBoard() {
               ⚙
             </button>
 
-            {/* Аватар пользователя - круглый, в правом углу */}
+            {/* Аватар пользователя с ролью - круглый, в правом углу */}
             {user && (
-              <button
-                onClick={() => setShowProfileModal(true)}
-                className="cursor-pointer transition-transform duration-300 hover:scale-110"
-                style={{
-                  width: 'clamp(50px, 6vw, 70px)',
-                  height: 'clamp(50px, 6vw, 70px)',
-                  minWidth: 'clamp(50px, 6vw, 70px)',
-                  minHeight: 'clamp(50px, 6vw, 70px)',
-                  borderRadius: '50%',
-                  overflow: 'hidden',
-                  marginLeft: 'clamp(12px, 2vw, 20px)',
-                  flexShrink: 0,
-                  aspectRatio: '1 / 1',
-                  padding: 0,
-                }}
-                title={user.name || user.email}
-              >
+              <div className="flex items-center" style={{ gap: 'clamp(8px, 1vw, 12px)', marginLeft: 'clamp(12px, 2vw, 20px)' }}>
+                {currentUserRole && (
+                  <div
+                    className="px-2 py-1 rounded"
+                    style={{
+                      backgroundColor: currentUserRole === 'OWNER' ? '#FF8800' : '#1E80D9',
+                      color: '#FFFFFF',
+                      fontSize: 'clamp(10px, 1.2vw, 12px)',
+                      fontWeight: '500',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {currentUserRole === 'OWNER' ? 'Владелец' : 'Участник'}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="cursor-pointer transition-transform duration-300 hover:scale-110"
+                  style={{
+                    width: 'clamp(50px, 6vw, 70px)',
+                    height: 'clamp(50px, 6vw, 70px)',
+                    minWidth: 'clamp(50px, 6vw, 70px)',
+                    minHeight: 'clamp(50px, 6vw, 70px)',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    aspectRatio: '1 / 1',
+                    padding: 0,
+                  }}
+                  title={user.name || user.email}
+                >
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
@@ -699,7 +716,8 @@ export default function KanbanBoard() {
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                 )}
-              </button>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -798,7 +816,7 @@ export default function KanbanBoard() {
 
             {/* Колонка с задачами */}
             <div
-              className="flex-1 flex flex-col"
+              className="flex flex-col"
               onDragOver={(e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
@@ -827,17 +845,17 @@ export default function KanbanBoard() {
                 setDraggedTaskId(null);
               }}
               style={{
-                borderWidth: '1px 1px 0px 1px',
+                borderWidth: '1px',
                 borderStyle: 'solid',
                 borderColor: dragOverStatusId === status.id ? '#FF8800' : '#1E80D9',
-                borderRadius: '50px 50px 0px 0px',
+                borderRadius: '50px',
                 padding: 'clamp(20px, 3vw, 30px)',
                 minHeight: 'clamp(400px, 50vh, 600px)',
                 transition: 'border-color 0.2s ease',
               }}
             >
               {/* Задачи */}
-              <div className="flex-1">
+              <div>
                 {(tasksByStatus[status.id] || []).map((task) => (
                   <TaskCard
                     key={task.id}

@@ -1,4 +1,4 @@
-import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { StatusCreatePayload } from '@shared/api/types';
 
 interface StatusModalProps {

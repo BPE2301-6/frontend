@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { projectsApi } from '@shared/api/projects';
-import { Project } from '@shared/api/types';
+import { projectMembersApi } from '@shared/api/projectMembers';
+import { Project, ProjectRole } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
+import { useAuthStore } from '@entities/auth/useAuthStore';
 
 interface ProjectSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentProjectId: string | null;
+}
+
+interface ProjectWithRole extends Project {
+  userRole?: ProjectRole;
 }
 
 export default function ProjectSelectorModal({
@@ -16,12 +22,13 @@ export default function ProjectSelectorModal({
   currentProjectId,
 }: ProjectSelectorModalProps) {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const { user } = useAuthStore();
+  const [projects, setProjects] = useState<ProjectWithRole[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || !user) {
       setProjects([]);
       setError('');
       return;
@@ -32,7 +39,30 @@ export default function ProjectSelectorModal({
       setError('');
       try {
         const response = await projectsApi.list({ limit: 50 });
-        setProjects(response.items || []);
+        const allProjects = response.items || [];
+        
+        // Для каждого проекта проверяем, является ли пользователь участником
+        const projectsWithRoles: ProjectWithRole[] = [];
+        
+        for (const project of allProjects) {
+          try {
+            const members = await projectMembersApi.list(project.id);
+            const userMember = members.find(m => m.user_id === user.id);
+            
+            // Добавляем проект только если пользователь является MEMBER или OWNER
+            if (userMember && (userMember.role === 'MEMBER' || userMember.role === 'OWNER')) {
+              projectsWithRoles.push({
+                ...project,
+                userRole: userMember.role,
+              });
+            }
+          } catch (err) {
+            // Если не удалось получить участников, пропускаем проект
+            console.error(`Ошибка загрузки участников проекта ${project.id}:`, err);
+          }
+        }
+        
+        setProjects(projectsWithRoles);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Ошибка загрузки проектов');
       } finally {
@@ -41,7 +71,7 @@ export default function ProjectSelectorModal({
     };
 
     loadProjects();
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   // Автоскрытие ошибок
   useEffect(() => {
@@ -217,8 +247,23 @@ export default function ProjectSelectorModal({
                       {proj.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
-                      <div className="text-white font-medium" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                        {proj.name}
+                      <div className="flex items-center gap-2">
+                        <div className="text-white font-medium" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
+                          {proj.name}
+                        </div>
+                        {proj.userRole && (
+                          <div
+                            className="px-2 py-0.5 rounded"
+                            style={{
+                              backgroundColor: proj.userRole === 'OWNER' ? '#FF8800' : '#1E80D9',
+                              color: '#FFFFFF',
+                              fontSize: 'clamp(10px, 1.2vw, 12px)',
+                              fontWeight: '500',
+                            }}
+                          >
+                            {proj.userRole === 'OWNER' ? 'Владелец' : 'Участник'}
+                          </div>
+                        )}
                       </div>
                       {proj.key && (
                         <div className="text-[#838486]" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
