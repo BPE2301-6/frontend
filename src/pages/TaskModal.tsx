@@ -173,12 +173,6 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
         <form onSubmit={handleSubmit}>
           {/* Название задачи */}
           <div className="mb-10">
-            <label
-              className="block text-white font-medium mb-4"
-              style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
-            >
-              Название задачи
-            </label>
             <input
               type="text"
               className="w-full text-white placeholder:text-gray-400 outline-none"

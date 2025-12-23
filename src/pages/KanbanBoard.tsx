@@ -14,7 +14,7 @@ import { useProjectMembers } from '@entities/projectMembers/useProjectMembers';
 import { projectsApi } from '@shared/api/projects';
 import { projectMembersApi } from '@shared/api/projectMembers';
 import { tagsApi, Tag } from '@shared/api/tags';
-import { createTask as createTaskApi, updateTask as updateTaskApi } from '@shared/api/tasks';
+import { createTask as createTaskApi, updateTask as updateTaskApi, fetchTasks } from '@shared/api/tasks';
 import { Task, TaskCreatePayload, Project, StatusCreatePayload } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
 
@@ -74,9 +74,12 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   tags: Tag[];
+  onDragStart: (taskId: string) => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
 }
 
-function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
+function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDragging }: TaskCardProps) {
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -84,9 +87,22 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
     onDelete(task.id);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', task.id);
+    onDragStart(task.id);
+  };
+
+  const handleDragEnd = () => {
+    onDragEnd();
+  };
+
   return (
     <div
-      className="bg-[#313236] cursor-pointer hover:opacity-90 transition-opacity relative"
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className="bg-[#313236] cursor-move hover:opacity-90 transition-opacity relative"
       onClick={() => onEdit(task)}
       style={{
         marginBottom: 'clamp(16px, 2vw, 24px)',
@@ -94,6 +110,8 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
         width: '100%',
         border: '1px solid #404040',
         borderRadius: '20px',
+        opacity: isDragging ? 0.5 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
       }}
     >
       {/* Точка приоритета - справа в углу */}
@@ -172,17 +190,14 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
       {/* Разделитель */}
       <div style={{ height: '1px', backgroundColor: '#404040', marginBottom: '12px' }} />
 
-      {/* Ключ задачи и дедлайн */}
-      <div className="flex items-center justify-between">
-        <div className="text-[#838486]" style={{ fontSize: 'clamp(11px, 1.2vw, 13px)' }}>
-          {task.key}
-        </div>
-        {task.due_date && (
+      {/* Дедлайн */}
+      {task.due_date && (
+        <div className="flex items-center justify-end">
           <div className="text-[#838486]" style={{ fontSize: 'clamp(11px, 1.2vw, 13px)' }}>
             {formatDate(task.due_date)}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Исполнитель */}
       {task.assignee_id && (
@@ -229,6 +244,8 @@ export default function KanbanBoard() {
   const [showProjectSelectorModal, setShowProjectSelectorModal] = useState(false);
   const [deleteStatusId, setDeleteStatusId] = useState<string | null>(null);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverStatusId, setDragOverStatusId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!projectId) {
@@ -259,6 +276,7 @@ export default function KanbanBoard() {
     error: tasksError,
     setFilters: setTaskFilters,
     deleteTask: deleteTaskApi,
+    moveTask: moveTaskApi,
     reload: reloadTasks,
     isApiError: isTaskApiError,
   } = useTasks(projectId, { q: searchQuery });
@@ -325,6 +343,11 @@ export default function KanbanBoard() {
 
       // Обработка тегов
       if (tagNames !== undefined) {
+        // Получаем актуальный список тегов проекта
+        const updatedTagsResponse = await tagsApi.list(projectId);
+        const allTags = updatedTagsResponse.items || [];
+        setTags(allTags);
+        
         if (tagNames && tagNames.trim()) {
           const tagNameList = tagNames
             .split(',')
@@ -336,7 +359,7 @@ export default function KanbanBoard() {
             
             // Для каждого тега находим существующий или создаем новый
             for (const tagName of tagNameList) {
-              let tag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
+              let tag = allTags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
               
               if (!tag) {
                 // Создаем новый тег
@@ -347,8 +370,9 @@ export default function KanbanBoard() {
                   });
                   tag = newTag;
                   // Обновляем список тегов
-                  const updatedTags = await tagsApi.list(projectId);
-                  setTags(updatedTags.items || []);
+                  const freshTags = await tagsApi.list(projectId);
+                  setTags(freshTags.items || []);
+                  allTags.push(newTag);
                 } catch (err) {
                   console.error('Ошибка создания тега:', err);
                   continue;
@@ -364,16 +388,15 @@ export default function KanbanBoard() {
             if (tagIds.length > 0) {
               try {
                 await tagsApi.attachToTask(taskId, tagIds);
-                // Перезагружаем задачи, чтобы обновить теги
-                await reloadTasks();
               } catch (err) {
                 console.error('Ошибка привязки тегов к задаче:', err);
               }
             }
           } else {
             // Если поле тегов пустое, удаляем все теги
-            // Сначала получаем текущие теги задачи
-            const currentTask = tasks.find((t) => t.id === taskId);
+            // Получаем актуальную задачу
+            const freshTasks = await fetchTasks(projectId, { limit: 200 });
+            const currentTask = freshTasks.items.find((t) => t.id === taskId);
             if (currentTask && currentTask.tag_ids && currentTask.tag_ids.length > 0) {
               // Удаляем все теги по одному
               for (const tagId of currentTask.tag_ids) {
@@ -383,12 +406,12 @@ export default function KanbanBoard() {
                   console.error('Ошибка удаления тега из задачи:', err);
                 }
               }
-              await reloadTasks();
             }
           }
         } else {
           // Если поле тегов пустое, удаляем все теги
-          const currentTask = tasks.find((t) => t.id === taskId);
+          const freshTasks = await fetchTasks(projectId, { limit: 200 });
+          const currentTask = freshTasks.items.find((t) => t.id === taskId);
           if (currentTask && currentTask.tag_ids && currentTask.tag_ids.length > 0) {
             // Удаляем все теги по одному
             for (const tagId of currentTask.tag_ids) {
@@ -398,9 +421,11 @@ export default function KanbanBoard() {
                 console.error('Ошибка удаления тега из задачи:', err);
               }
             }
-            await reloadTasks();
           }
         }
+        
+        // Перезагружаем задачи в конце, чтобы обновить теги
+        await reloadTasks();
       }
 
       setIsModalOpen(false);
@@ -798,13 +823,41 @@ export default function KanbanBoard() {
             {/* Колонка с задачами */}
             <div
               className="flex-1 flex flex-col"
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                setDragOverStatusId(status.id);
+              }}
+              onDragLeave={() => {
+                setDragOverStatusId(null);
+              }}
+              onDrop={async (e) => {
+                e.preventDefault();
+                setDragOverStatusId(null);
+                const taskId = e.dataTransfer.getData('text/plain');
+                if (taskId) {
+                  const draggedTask = tasks.find((t) => t.id === taskId);
+                  if (draggedTask && draggedTask.status_id !== status.id) {
+                    try {
+                      await moveTaskApi(taskId, status.id);
+                      await reloadTasks();
+                    } catch (err) {
+                      console.error('Ошибка перемещения задачи:', err);
+                      const message = err instanceof Error ? err.message : 'Ошибка перемещения задачи';
+                      alert(message);
+                    }
+                  }
+                }
+                setDraggedTaskId(null);
+              }}
               style={{
                 borderWidth: '1px 1px 0px 1px',
                 borderStyle: 'solid',
-                borderColor: '#1E80D9',
+                borderColor: dragOverStatusId === status.id ? '#FF8800' : '#1E80D9',
                 borderRadius: '50px 50px 0px 0px',
                 padding: 'clamp(20px, 3vw, 30px)',
                 minHeight: 'clamp(400px, 50vh, 600px)',
+                transition: 'border-color 0.2s ease',
               }}
             >
               {/* Задачи */}
@@ -816,6 +869,9 @@ export default function KanbanBoard() {
                     onEdit={handleOpenModal}
                     onDelete={(taskId) => setDeleteTaskId(taskId)}
                     tags={tags}
+                    onDragStart={setDraggedTaskId}
+                    onDragEnd={() => setDraggedTaskId(null)}
+                    isDragging={draggedTaskId === task.id}
                   />
                 ))}
 

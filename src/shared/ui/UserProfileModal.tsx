@@ -118,7 +118,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         </h2>
 
         {/* Аватар с кнопкой изменения */}
-        <div className="flex flex-col items-center mb-6">
+        <div className="flex flex-col items-center mb-10">
           <div
             className="overflow-hidden border-4 border-[#1E80D9]"
             style={{
@@ -168,7 +168,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               // Заглушка для загрузки фото (minio не поднята)
               alert('Функция загрузки фотографии будет доступна после настройки MinIO');
             }}
-            className="text-white font-medium mt-2"
+            className="text-white font-medium"
             style={{
               padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
               borderRadius: '15px',
@@ -177,6 +177,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               border: 'none',
               cursor: 'pointer',
               transition: 'background-color 0.3s ease',
+              marginTop: 'clamp(20px, 2.5vw, 30px)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = '#166BB7';
@@ -192,7 +193,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         {/* Информация */}
         <div className="mb-10">
           <div
-            className="text-white mb-8"
+            className="text-white"
             style={{
               fontSize: 'clamp(16px, 2vw, 20px)',
             }}
