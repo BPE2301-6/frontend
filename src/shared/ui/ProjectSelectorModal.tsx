@@ -44,37 +44,32 @@ export default function ProjectSelectorModal({
         const projectsWithRoles: ProjectWithRole[] = [];
         
         for (const project of allProjects) {
-          try {
-            // Если пользователь является создателем проекта (lead_id), он автоматически OWNER
-            if (project.lead_id === user.id) {
-              projectsWithRoles.push({
-                ...project,
-                userRole: 'OWNER',
-              });
-              continue;
-            }
-            
+          let userRole: ProjectRole | undefined = undefined;
+          
+          // Сначала проверяем, является ли пользователь создателем проекта (lead_id)
+          if (project.lead_id === user.id) {
+            userRole = 'OWNER';
+          } else {
             // Иначе проверяем список участников
-            const members = await projectMembersApi.list(project.id);
-            const userMember = members.find(m => m.user_id === user.id);
-            
-            // Добавляем проект только если пользователь является MEMBER или OWNER
-            if (userMember && (userMember.role === 'MEMBER' || userMember.role === 'OWNER')) {
-              projectsWithRoles.push({
-                ...project,
-                userRole: userMember.role,
-              });
+            try {
+              const members = await projectMembersApi.list(project.id);
+              const userMember = members.find(m => m.user_id === user.id);
+              
+              if (userMember && (userMember.role === 'MEMBER' || userMember.role === 'OWNER')) {
+                userRole = userMember.role;
+              }
+            } catch (memberErr) {
+              // Если не удалось получить участников, пропускаем проект
+              console.error(`Ошибка загрузки участников проекта ${project.id}:`, memberErr);
             }
-          } catch (err) {
-            // Если не удалось получить участников, но пользователь является создателем, добавляем как OWNER
-            if (project.lead_id === user.id) {
-              projectsWithRoles.push({
-                ...project,
-                userRole: 'OWNER',
-              });
-            } else {
-              console.error(`Ошибка загрузки участников проекта ${project.id}:`, err);
-            }
+          }
+          
+          // Добавляем проект только если определена роль (пользователь является создателем или участником)
+          if (userRole) {
+            projectsWithRoles.push({
+              ...project,
+              userRole: userRole,
+            });
           }
         }
         
@@ -244,60 +239,63 @@ export default function ProjectSelectorModal({
                     }
                   }}
                 >
-                  <div className="flex items-center" style={{ gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        backgroundColor: proj.id === currentProjectId ? '#1E80D9' : '#404040',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#FFFFFF',
-                        fontWeight: 'bold',
-                        fontSize: 'clamp(16px, 2vw, 18px)',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {proj.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between" style={{ gap: '12px', width: '100%' }}>
+                    <div className="flex items-center" style={{ gap: '12px', flex: '1', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: proj.id === currentProjectId ? '#1E80D9' : '#404040',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#FFFFFF',
+                          fontWeight: 'bold',
+                          fontSize: 'clamp(16px, 2vw, 18px)',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {proj.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1" style={{ minWidth: 0 }}>
                         <div className="text-white font-medium" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
                           {proj.name}
                         </div>
-                        {proj.userRole && (
-                          <div
-                            style={{
-                              color: '#FFFFFF',
-                              fontSize: 'clamp(10px, 1.2vw, 12px)',
-                              fontWeight: '600',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                            }}
-                          >
-                            {proj.userRole === 'OWNER' ? 'Владелец' : 'Участник'}
+                        {proj.key && (
+                          <div className="text-[#838486]" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
+                            {proj.key}
                           </div>
                         )}
                       </div>
-                      {proj.key && (
-                        <div className="text-[#838486]" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
-                          {proj.key}
+                    </div>
+                    <div className="flex items-center" style={{ gap: '12px', flexShrink: 0 }}>
+                      {proj.userRole && (
+                        <div
+                          style={{
+                            color: '#FFFFFF',
+                            fontSize: 'clamp(10px, 1.2vw, 12px)',
+                            fontWeight: '600',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {proj.userRole === 'OWNER' ? 'Владелец' : 'Участник'}
                         </div>
                       )}
+                      {proj.id === currentProjectId && (
+                        <div
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: '#1E80D9',
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
                     </div>
-                    {proj.id === currentProjectId && (
-                      <div
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          backgroundColor: '#1E80D9',
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
                   </div>
                 </button>
               ))}
