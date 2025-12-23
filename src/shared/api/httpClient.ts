@@ -83,17 +83,35 @@ export async function httpRequest<T = unknown>(
   { method = 'GET', body, query, signal }: HttpRequestOptions = {}
 ): Promise<T> {
   // Используем временный токен если он установлен, иначе получаем из store
-  const token = tempToken || getToken();
+  const tempTokenValue = tempToken; // Сохраняем значение в локальную переменную
+  const storeToken = getToken();
+  const token = tempTokenValue || storeToken;
+  
+  console.log('httpRequest token check:', {
+    hasTempToken: !!tempTokenValue,
+    tempTokenValue: tempTokenValue ? tempTokenValue.substring(0, 20) + '...' : null,
+    hasStoreToken: !!storeToken,
+    finalToken: token ? token.substring(0, 20) + '...' : null,
+    path
+  });
+  
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    console.warn('No token available for request to:', path);
   }
 
   const url = buildUrl(path, query);
-  console.log('API Request:', { method, url, headers, body: body ? JSON.stringify(body) : undefined });
+  console.log('API Request:', { 
+    method, 
+    url, 
+    headers: { ...headers, Authorization: token ? `Bearer ${token.substring(0, 20)}...` : 'none' }, 
+    body: body ? JSON.stringify(body) : undefined
+  });
   
   let response: Response;
   try {

@@ -31,24 +31,33 @@ export const useAuthStore = create<AuthState>()(
           // Шаг 1: Получаем токен
           const response = await authApi.login({ email, password });
           
-          // Шаг 2: Устанавливаем временный токен для следующего запроса
+          if (!response.access_token) {
+            throw new Error('Токен не получен от сервера');
+          }
+          
+          // Шаг 2: Сразу устанавливаем токен в store синхронно
+          // Это гарантирует, что токен будет доступен для следующего запроса
+          set({
+            token: response.access_token,
+            isAuthenticated: true,
+          });
+          
+          // Шаг 3: Также устанавливаем временный токен на случай, если store не успел обновиться
           setTempToken(response.access_token);
           
-          // Шаг 3: Получаем информацию о пользователе
+          // Шаг 4: Получаем информацию о пользователе
           try {
             const user = await usersApi.getCurrentUser();
             
-            // Шаг 4: Очищаем временный токен и устанавливаем финальное состояние
+            // Шаг 5: Очищаем временный токен и устанавливаем финальное состояние
             setTempToken(null);
             set({
-              token: response.access_token,
               user: user,
-              isAuthenticated: true,
               loading: false,
               error: null,
             });
           } catch (userError) {
-            // Если не удалось получить пользователя, очищаем временный токен и состояние
+            // Если не удалось получить пользователя, очищаем токен и состояние
             setTempToken(null);
             set({
               token: null,
