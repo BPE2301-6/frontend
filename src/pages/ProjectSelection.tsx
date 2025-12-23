@@ -4,6 +4,7 @@ import { useProjects } from '@entities/projects/useProjects';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 import { ProjectCreatePayload } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
+import { projectMembersApi } from '@shared/api/projectMembers';
 
 type ViewMode = 'search' | 'create' | null;
 
@@ -115,6 +116,18 @@ export default function ProjectSelection() {
       };
 
       const createdProject = await createProject(payload);
+      
+      // Добавляем создателя в участники проекта с ролью OWNER
+      try {
+        await projectMembersApi.add(createdProject.id, {
+          user_id: currentUser.id,
+          role: 'OWNER',
+        });
+      } catch (err) {
+        // Если не удалось добавить в участники, продолжаем (возможно, уже добавлен)
+        console.warn('Не удалось добавить создателя в участники проекта:', err);
+      }
+      
       setShowCreateModal(false);
       setNewProject({ key: '', name: '', description: '' });
       navigate(`/board?projectId=${createdProject.id}`);
@@ -126,7 +139,35 @@ export default function ProjectSelection() {
     }
   };
 
-  const handleSelectProject = (projectId: string) => {
+  const handleSelectProject = async (projectId: string) => {
+    const currentUser = user || useAuthStore.getState().user;
+    if (!currentUser || !currentUser.id) {
+      navigate(`/board?projectId=${projectId}`);
+      return;
+    }
+
+    // Проверяем, является ли пользователь участником проекта
+    try {
+      const members = await projectMembersApi.list(projectId);
+      const isMember = members.some(m => m.user_id === currentUser.id);
+      
+      // Если пользователь не является участником, добавляем его с ролью MEMBER
+      if (!isMember) {
+        try {
+          await projectMembersApi.add(projectId, {
+            user_id: currentUser.id,
+            role: 'MEMBER',
+          });
+        } catch (err) {
+          // Если не удалось добавить, продолжаем (возможно, пользователь уже добавлен)
+          console.warn('Не удалось добавить пользователя в участники проекта:', err);
+        }
+      }
+    } catch (err) {
+      // Если не удалось получить список участников, продолжаем
+      console.warn('Не удалось проверить участников проекта:', err);
+    }
+    
     navigate(`/board?projectId=${projectId}`);
   };
 

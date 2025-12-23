@@ -92,7 +92,35 @@ export default function ProjectSelectorModal({
     }
   }, [error]);
 
-  const handleSelectProject = (projectId: string) => {
+  const handleSelectProject = async (projectId: string) => {
+    if (!user || !user.id) {
+      navigate(`/board?projectId=${projectId}`);
+      onClose();
+      return;
+    }
+
+    // Проверяем, является ли пользователь участником проекта
+    try {
+      const members = await projectMembersApi.list(projectId);
+      const isMember = members.some(m => m.user_id === user.id);
+      
+      // Если пользователь не является участником, добавляем его с ролью MEMBER
+      if (!isMember) {
+        try {
+          await projectMembersApi.add(projectId, {
+            user_id: user.id,
+            role: 'MEMBER',
+          });
+        } catch (err) {
+          // Если не удалось добавить, продолжаем (возможно, пользователь уже добавлен)
+          console.warn('Не удалось добавить пользователя в участники проекта:', err);
+        }
+      }
+    } catch (err) {
+      // Если не удалось получить список участников, продолжаем
+      console.warn('Не удалось проверить участников проекта:', err);
+    }
+    
     navigate(`/board?projectId=${projectId}`);
     onClose();
   };
