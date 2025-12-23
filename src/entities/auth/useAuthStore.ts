@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi, User, LoginResponse, RegisterResponse } from '@shared/api/auth';
+import { usersApi } from '@shared/api/users';
 import { ApiError } from '@shared/api/httpClient';
 
 interface AuthState {
@@ -30,7 +31,7 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApi.login({ email, password });
           // После успешного логина получаем информацию о пользователе
           try {
-            const user = await authApi.getCurrentUser();
+            const user = await usersApi.getCurrentUser();
             set({
               token: response.access_token,
               user: user,
@@ -71,7 +72,7 @@ export const useAuthStore = create<AuthState>()(
           // После регистрации автоматически логинимся для получения токена
           try {
             const loginResponse = await authApi.login({ email, password });
-            const user = await authApi.getCurrentUser();
+            const user = await usersApi.getCurrentUser();
             set({
               token: loginResponse.access_token,
               user: user,

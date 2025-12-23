@@ -40,7 +40,5 @@ export const authApi = {
       method: 'POST',
       body: payload,
     }),
-  getCurrentUser: (): Promise<User> =>
-    httpRequest<User>('/api/v1/auth/me'),
 };
 
