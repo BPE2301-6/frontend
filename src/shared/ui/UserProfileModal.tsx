@@ -124,28 +124,38 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
             style={{
               width: 'clamp(120px, 15vw, 180px)',
               height: 'clamp(120px, 15vw, 180px)',
+              minWidth: 'clamp(120px, 15vw, 180px)',
+              minHeight: 'clamp(120px, 15vw, 180px)',
               borderRadius: '50%',
               aspectRatio: '1 / 1',
+              padding: 0,
             }}
           >
             {user.avatar_url ? (
               <img
                 src={user.avatar_url}
                 alt={user.name}
-                className="w-full h-full object-cover"
                 style={{
                   borderRadius: '50%',
                   display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
                 }}
               />
             ) : (
               <div
-                className="w-full h-full flex items-center justify-center text-white font-bold"
                 style={{
                   backgroundColor: '#1E80D9',
                   fontSize: 'clamp(48px, 6vw, 72px)',
                   borderRadius: '50%',
                   display: 'flex',
+                  width: '100%',
+                  height: '100%',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#FFFFFF',
+                  fontWeight: 'bold',
                 }}
               >
                 {user.name.charAt(0).toUpperCase()}

@@ -487,10 +487,14 @@ export default function KanbanBoard() {
                 style={{
                   width: 'clamp(50px, 6vw, 70px)',
                   height: 'clamp(50px, 6vw, 70px)',
+                  minWidth: 'clamp(50px, 6vw, 70px)',
+                  minHeight: 'clamp(50px, 6vw, 70px)',
                   borderRadius: '50%',
                   overflow: 'hidden',
                   marginLeft: 'clamp(12px, 2vw, 20px)',
                   flexShrink: 0,
+                  aspectRatio: '1 / 1',
+                  padding: 0,
                 }}
                 title={user.name || user.email}
               >
@@ -498,20 +502,31 @@ export default function KanbanBoard() {
                   <img
                     src={user.avatar_url}
                     alt={user.name}
-                    className="w-full h-full object-cover border-2 border-[#1E80D9]"
+                    className="w-full h-full object-cover"
                     style={{
                       borderRadius: '50%',
+                      border: '2px solid #1E80D9',
                       boxShadow: '0 0 20px rgba(30, 128, 217, 0.5)',
+                      display: 'block',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
                     }}
                   />
                 ) : (
                   <div
-                    className="w-full h-full flex items-center justify-center text-white font-bold border-2 border-[#1E80D9]"
+                    className="w-full h-full flex items-center justify-center text-white font-bold"
                     style={{
                       borderRadius: '50%',
                       backgroundColor: '#1E80D9',
+                      border: '2px solid #1E80D9',
                       fontSize: 'clamp(24px, 3vw, 36px)',
                       boxShadow: '0 0 20px rgba(30, 128, 217, 0.5)',
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
                     {user.name.charAt(0).toUpperCase()}

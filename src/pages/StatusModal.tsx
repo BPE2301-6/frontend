@@ -140,7 +140,7 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
           )}
 
           {/* Кнопки */}
-          <div className="flex justify-center gap-8 mt-12">
+          <div className="flex justify-center" style={{ marginTop: 'clamp(40px, 5vw, 55px)', gap: 'clamp(30px, 4vw, 50px)' }}>
             <button
               type="button"
               onClick={onClose}
