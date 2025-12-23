@@ -261,7 +261,10 @@ export default function KanbanBoard() {
   const [tags, setTags] = useState<Tag[]>([]);
   
   // Получаем роль текущего пользователя в проекте
-  const currentUserRole = projectMembersData.find(m => m.user_id === user?.id)?.role;
+  // Если пользователь является создателем проекта (lead_id), он автоматически OWNER
+  const currentUserRole = project?.lead_id === user?.id 
+    ? 'OWNER' 
+    : projectMembersData.find(m => m.user_id === user?.id)?.role;
 
   useEffect(() => {
     if (!projectId) return;
@@ -614,6 +617,7 @@ export default function KanbanBoard() {
             <ProjectMembersList
               members={projectMembers}
               currentUserId={user?.id}
+              currentUserRole={currentUserRole}
               onDeleteMember={handleDeleteMember}
               onAddMember={() => setShowAddMemberModal(true)}
             />
@@ -656,13 +660,14 @@ export default function KanbanBoard() {
                   <div
                     className="px-2.5 py-1 rounded-full"
                     style={{
-                      backgroundColor: currentUserRole === 'OWNER' ? '#FF8800' : '#1E80D9',
-                      color: '#FFFFFF',
+                      backgroundColor: currentUserRole === 'OWNER' ? '#FF8800' : 'transparent',
+                      color: currentUserRole === 'OWNER' ? '#FFFFFF' : '#1E80D9',
                       fontSize: 'clamp(10px, 1.2vw, 12px)',
                       fontWeight: '600',
                       whiteSpace: 'nowrap',
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
+                      border: currentUserRole === 'OWNER' ? 'none' : '1px solid #1E80D9',
                     }}
                   >
                     {currentUserRole === 'OWNER' ? 'Владелец' : 'Участник'}

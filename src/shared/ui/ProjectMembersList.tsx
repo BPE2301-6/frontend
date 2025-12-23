@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { User } from '@shared/api/types';
+import { User, ProjectRole } from '@shared/api/types';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 interface ProjectMembersListProps {
   members: User[];
   currentUserId?: string;
+  currentUserRole?: ProjectRole;
   onDeleteMember: (userId: string) => void;
   onAddMember: () => void;
 }
@@ -12,6 +13,7 @@ interface ProjectMembersListProps {
 export default function ProjectMembersList({
   members,
   currentUserId,
+  currentUserRole,
   onDeleteMember,
   onAddMember,
 }: ProjectMembersListProps) {
@@ -20,8 +22,16 @@ export default function ProjectMembersList({
 
   // Фильтруем участников, исключая текущего пользователя
   const displayMembers = members.filter((m) => m.id !== currentUserId);
+  
+  // Проверяем, является ли пользователь владельцем
+  const isOwner = currentUserRole === 'OWNER';
 
   if (displayMembers.length === 0) {
+    // Показываем кнопку добавления только если пользователь владелец
+    if (!isOwner) {
+      return null;
+    }
+    
     return (
       <>
         <button
@@ -63,6 +73,10 @@ export default function ProjectMembersList({
         {displayMembers.slice(0, 3).map((member, index) => (
           <div
             key={member.id}
+            title={member.name || member.email}
+            onMouseEnter={() => isOwner && setHoveredMemberId(member.id)}
+            onMouseLeave={() => setHoveredMemberId(null)}
+            onClick={() => isOwner && setDeleteMemberId(member.id)}
             style={{
               width: 'clamp(40px, 5vw, 50px)',
               height: 'clamp(40px, 5vw, 50px)',
@@ -74,12 +88,8 @@ export default function ProjectMembersList({
               position: 'relative',
               aspectRatio: '1 / 1',
               flexShrink: 0,
-              cursor: 'pointer',
+              cursor: isOwner ? 'pointer' : 'default',
             }}
-            title={member.name || member.email}
-            onMouseEnter={() => setHoveredMemberId(member.id)}
-            onMouseLeave={() => setHoveredMemberId(null)}
-            onClick={() => setDeleteMemberId(member.id)}
           >
             {member.avatar_url ? (
               <img
@@ -115,7 +125,7 @@ export default function ProjectMembersList({
                 {member.name.charAt(0).toUpperCase()}
               </div>
             )}
-            {hoveredMemberId === member.id && (
+            {isOwner && hoveredMemberId === member.id && (
               <div
                 style={{
                   position: 'absolute',
@@ -161,35 +171,37 @@ export default function ProjectMembersList({
             +{displayMembers.length - 3}
           </div>
         )}
-        <button
-          onClick={onAddMember}
-          className="flex items-center justify-center text-white font-bold"
-          style={{
-            width: 'clamp(40px, 5vw, 50px)',
-            height: 'clamp(40px, 5vw, 50px)',
-            borderRadius: '50%',
-            backgroundColor: '#1E80D9',
-            fontSize: 'clamp(20px, 2.5vw, 24px)',
-            lineHeight: '1',
-            border: '2px solid #242528',
-            cursor: 'pointer',
-            marginLeft: displayMembers.length > 0 ? '-8px' : '0',
-            transition: 'background-color 0.3s ease, transform 0.3s ease',
-            flexShrink: 0,
-            aspectRatio: '1 / 1',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#166BB7';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#1E80D9';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-          title="Добавить участника"
-        >
-          +
-        </button>
+        {isOwner && (
+          <button
+            onClick={onAddMember}
+            className="flex items-center justify-center text-white font-bold"
+            style={{
+              width: 'clamp(40px, 5vw, 50px)',
+              height: 'clamp(40px, 5vw, 50px)',
+              borderRadius: '50%',
+              backgroundColor: '#1E80D9',
+              fontSize: 'clamp(20px, 2.5vw, 24px)',
+              lineHeight: '1',
+              border: '2px solid #242528',
+              cursor: 'pointer',
+              marginLeft: displayMembers.length > 0 ? '-8px' : '0',
+              transition: 'background-color 0.3s ease, transform 0.3s ease',
+              flexShrink: 0,
+              aspectRatio: '1 / 1',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#166BB7';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#1E80D9';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title="Добавить участника"
+          >
+            +
+          </button>
+        )}
       </div>
 
       <ConfirmDeleteModal

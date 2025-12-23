@@ -45,6 +45,16 @@ export default function ProjectSelectorModal({
         
         for (const project of allProjects) {
           try {
+            // Если пользователь является создателем проекта (lead_id), он автоматически OWNER
+            if (project.lead_id === user.id) {
+              projectsWithRoles.push({
+                ...project,
+                userRole: 'OWNER',
+              });
+              continue;
+            }
+            
+            // Иначе проверяем список участников
             const members = await projectMembersApi.list(project.id);
             const userMember = members.find(m => m.user_id === user.id);
             
@@ -56,8 +66,15 @@ export default function ProjectSelectorModal({
               });
             }
           } catch (err) {
-            // Если не удалось получить участников, пропускаем проект
-            console.error(`Ошибка загрузки участников проекта ${project.id}:`, err);
+            // Если не удалось получить участников, но пользователь является создателем, добавляем как OWNER
+            if (project.lead_id === user.id) {
+              projectsWithRoles.push({
+                ...project,
+                userRole: 'OWNER',
+              });
+            } else {
+              console.error(`Ошибка загрузки участников проекта ${project.id}:`, err);
+            }
           }
         }
         
