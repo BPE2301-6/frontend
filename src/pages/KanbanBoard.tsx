@@ -14,6 +14,7 @@ import { useProjectMembers } from '@entities/projectMembers/useProjectMembers';
 import { projectsApi } from '@shared/api/projects';
 import { projectMembersApi } from '@shared/api/projectMembers';
 import { tagsApi, Tag } from '@shared/api/tags';
+import { createTask as createTaskApi, updateTask as updateTaskApi } from '@shared/api/tasks';
 import { Task, TaskCreatePayload, Project, StatusCreatePayload } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
 
@@ -29,7 +30,7 @@ const formatDate = (value: string | null | undefined): string => {
     const date = new Date(value);
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear().toString().slice(-2);
+    const year = date.getFullYear();
     return `${day}.${month}.${year}`;
   } catch {
     return '';
@@ -95,24 +96,6 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
         borderRadius: '20px',
       }}
     >
-      <button
-        onClick={handleDeleteClick}
-        className="absolute top-2 right-2 text-white hover:text-[#FD5353] transition-colors"
-        style={{
-          width: '24px',
-          height: '24px',
-          fontSize: '18px',
-          lineHeight: '1',
-          border: 'none',
-          backgroundColor: 'transparent',
-          cursor: 'pointer',
-          zIndex: 10,
-        }}
-        title="Удалить задачу"
-      >
-        ×
-      </button>
-
       {/* Точка приоритета - справа в углу */}
       <div
         className="absolute"
@@ -127,6 +110,25 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
           zIndex: 5,
         }}
       />
+
+      {/* Кнопка удаления - справа снизу в углу */}
+      <button
+        onClick={handleDeleteClick}
+        className="absolute bottom-2 right-2 text-white hover:text-[#FD5353] transition-colors"
+        style={{
+          width: '24px',
+          height: '24px',
+          fontSize: '18px',
+          lineHeight: '1',
+          border: 'none',
+          backgroundColor: 'transparent',
+          cursor: 'pointer',
+          zIndex: 10,
+        }}
+        title="Удалить задачу"
+      >
+        ×
+      </button>
 
       {/* Заголовок */}
       <div className="mb-3 pr-4">
@@ -256,9 +258,8 @@ export default function KanbanBoard() {
     loading: loadingTasks,
     error: tasksError,
     setFilters: setTaskFilters,
-    createTask,
-    updateTask,
     deleteTask: deleteTaskApi,
+    reload: reloadTasks,
     isApiError: isTaskApiError,
   } = useTasks(projectId, { q: searchQuery });
 
@@ -296,15 +297,19 @@ export default function KanbanBoard() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, projectId, setTaskFilters]);
 
-  const handleSaveTask = async (payload: TaskCreatePayload) => {
+  const handleSaveTask = async (payload: TaskCreatePayload, tagNames?: string) => {
     if (!projectId || !user) {
       alert('Ошибка: проект или пользователь не найден');
       return;
     }
     try {
+      let taskId: string;
       if (modalTask?.id) {
         // При обновлении задачи сохраняем reporter_id из существующей задачи
-        await updateTask(modalTask.id, payload);
+        await updateTaskApi(modalTask.id, payload);
+        taskId = modalTask.id;
+        // Перезагружаем задачи
+        await reloadTasks();
       } else {
         // При создании новой задачи устанавливаем reporter_id из текущего пользователя
         const taskPayload: TaskCreatePayload = {
@@ -312,8 +317,92 @@ export default function KanbanBoard() {
           reporter_id: user.id,
           status_id: selectedStatusId || payload.status_id,
         };
-        await createTask(taskPayload);
+        const createdTask = await createTaskApi(projectId, taskPayload);
+        taskId = createdTask.id;
+        // Перезагружаем задачи
+        await reloadTasks();
       }
+
+      // Обработка тегов
+      if (tagNames !== undefined) {
+        if (tagNames && tagNames.trim()) {
+          const tagNameList = tagNames
+            .split(',')
+            .map((name) => name.trim())
+            .filter(Boolean);
+
+          if (tagNameList.length > 0) {
+            const tagIds: string[] = [];
+            
+            // Для каждого тега находим существующий или создаем новый
+            for (const tagName of tagNameList) {
+              let tag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
+              
+              if (!tag) {
+                // Создаем новый тег
+                try {
+                  const newTag = await tagsApi.create(projectId, {
+                    name: tagName,
+                    color: null,
+                  });
+                  tag = newTag;
+                  // Обновляем список тегов
+                  const updatedTags = await tagsApi.list(projectId);
+                  setTags(updatedTags.items || []);
+                } catch (err) {
+                  console.error('Ошибка создания тега:', err);
+                  continue;
+                }
+              }
+              
+              if (tag) {
+                tagIds.push(tag.id);
+              }
+            }
+
+            // Привязываем теги к задаче (заменяет все существующие теги)
+            if (tagIds.length > 0) {
+              try {
+                await tagsApi.attachToTask(taskId, tagIds);
+                // Перезагружаем задачи, чтобы обновить теги
+                await reloadTasks();
+              } catch (err) {
+                console.error('Ошибка привязки тегов к задаче:', err);
+              }
+            }
+          } else {
+            // Если поле тегов пустое, удаляем все теги
+            // Сначала получаем текущие теги задачи
+            const currentTask = tasks.find((t) => t.id === taskId);
+            if (currentTask && currentTask.tag_ids && currentTask.tag_ids.length > 0) {
+              // Удаляем все теги по одному
+              for (const tagId of currentTask.tag_ids) {
+                try {
+                  await tagsApi.detachFromTask(taskId, tagId);
+                } catch (err) {
+                  console.error('Ошибка удаления тега из задачи:', err);
+                }
+              }
+              await reloadTasks();
+            }
+          }
+        } else {
+          // Если поле тегов пустое, удаляем все теги
+          const currentTask = tasks.find((t) => t.id === taskId);
+          if (currentTask && currentTask.tag_ids && currentTask.tag_ids.length > 0) {
+            // Удаляем все теги по одному
+            for (const tagId of currentTask.tag_ids) {
+              try {
+                await tagsApi.detachFromTask(taskId, tagId);
+              } catch (err) {
+                console.error('Ошибка удаления тега из задачи:', err);
+              }
+            }
+            await reloadTasks();
+          }
+        }
+      }
+
       setIsModalOpen(false);
       setModalTask(null);
       setSelectedStatusId(null);
@@ -623,7 +712,7 @@ export default function KanbanBoard() {
         className="flex items-start"
         style={{
           padding: 'clamp(40px, 5vw, 55px)',
-          paddingTop: `calc(clamp(20px, 2.5vw, 30px) + clamp(120px, 15vh, 148px))`,
+          paddingTop: `calc(clamp(10px, 1.5vw, 15px) + clamp(120px, 15vh, 148px))`,
           gap: 'clamp(20px, 3vw, 30px)',
           minHeight: 'calc(100vh - clamp(120px, 15vh, 148px))',
         }}
@@ -788,6 +877,7 @@ export default function KanbanBoard() {
         isSaving={false}
         defaultStatusId={selectedStatusId}
         projectMembers={projectMembers}
+        tags={tags}
       />
 
       <StatusModal

@@ -33,15 +33,16 @@ const defaultForm: TaskForm = {
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (payload: TaskCreatePayload) => void;
+  onSave: (payload: TaskCreatePayload, tagNames?: string) => void;
   statuses: Status[];
   task: Task | null;
   isSaving: boolean;
   defaultStatusId?: string | null;
   projectMembers?: User[];
+  tags?: Array<{ id: string; name: string }>;
 }
 
-export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId, projectMembers = [] }: TaskModalProps) {
+export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId, projectMembers = [], tags = [] }: TaskModalProps) {
   const [form, setForm] = useState<TaskForm>(defaultForm);
   const { user } = useAuthStore();
 
@@ -54,6 +55,17 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
     if (!isOpen) return;
 
     if (task) {
+      // Преобразуем ID тегов в названия для отображения
+      const tagNames = Array.isArray(task.tag_ids) 
+        ? task.tag_ids
+            .map((tagId) => {
+              const tag = tags.find((t) => t.id === tagId);
+              return tag ? tag.name : '';
+            })
+            .filter(Boolean)
+            .join(', ')
+        : '';
+      
       setForm({
         title: task.title || '',
         description: task.description || '',
@@ -62,7 +74,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
         reporter_id: task.reporter_id || '',
         assignee_id: task.assignee_id || '',
         due_date: task.due_date ? task.due_date.slice(0, 10) : '',
-        tag_ids: Array.isArray(task.tag_ids) ? task.tag_ids.join(', ') : '',
+        tag_ids: tagNames,
       });
     } else {
       const statusId = defaultStatusId || firstStatusId;
@@ -72,7 +84,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
         reporter_id: user?.id || '',
       });
     }
-  }, [task, firstStatusId, isOpen, defaultStatusId, user]);
+  }, [task, firstStatusId, isOpen, defaultStatusId, user, tags]);
 
   if (!isOpen) return null;
 
@@ -104,16 +116,9 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       due_date: form.due_date || null,
     };
 
-    // tag_ids не включаем в payload при создании - теги добавляются отдельно через API
-    // const tags = form.tag_ids
-    //   .split(',')
-    //   .map((tag) => tag.trim())
-    //   .filter(Boolean);
-    // if (tags.length) {
-    //   payload.tag_ids = tags;
-    // }
-
-    onSave(payload);
+    // Теги передаем отдельно для обработки после создания/обновления задачи
+    const tagNames = form.tag_ids.trim();
+    onSave(payload, tagNames);
   };
 
   const priorityColor = PRIORITY_COLOR[form.priority] || PRIORITY_COLOR.MEDIUM;

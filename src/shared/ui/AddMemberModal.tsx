@@ -1,7 +1,7 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { usersApi } from '@shared/api/users';
 import { projectMembersApi } from '@shared/api/projectMembers';
-import { User, ProjectRole } from '@shared/api/types';
+import { User } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
 
 interface AddMemberModalProps {
@@ -244,34 +244,34 @@ export default function AddMemberModal({
                         </div>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleAddMember(user.id)}
-                      disabled={addingUserId === user.id}
-                      className="text-white font-medium disabled:opacity-50 flex-shrink-0"
-                      style={{
-                        padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
-                        borderRadius: '15px',
-                        backgroundColor: '#1E80D9',
-                        fontSize: 'clamp(14px, 1.5vw, 16px)',
-                        border: 'none',
-                        cursor: addingUserId === user.id ? 'not-allowed' : 'pointer',
-                        transition: 'background-color 0.3s ease',
-                        marginLeft: '16px',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (addingUserId !== user.id) {
-                          e.currentTarget.style.backgroundColor = '#166BB7';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (addingUserId !== user.id) {
-                          e.currentTarget.style.backgroundColor = '#1E80D9';
-                        }
-                      }}
-                    >
-                      {addingUserId === user.id ? 'Добавление...' : 'Добавить'}
-                    </button>
                   </div>
+                  <button
+                    onClick={() => handleAddMember(user.id)}
+                    disabled={addingUserId === user.id}
+                    className="text-white font-medium disabled:opacity-50 flex-shrink-0"
+                    style={{
+                      padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
+                      borderRadius: '15px',
+                      backgroundColor: '#1E80D9',
+                      fontSize: 'clamp(14px, 1.5vw, 16px)',
+                      border: 'none',
+                      cursor: addingUserId === user.id ? 'not-allowed' : 'pointer',
+                      transition: 'background-color 0.3s ease',
+                      marginLeft: '16px',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (addingUserId !== user.id) {
+                        e.currentTarget.style.backgroundColor = '#166BB7';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (addingUserId !== user.id) {
+                        e.currentTarget.style.backgroundColor = '#1E80D9';
+                      }
+                    }}
+                  >
+                    {addingUserId === user.id ? 'Добавление...' : 'Добавить'}
+                  </button>
                 </div>
               ))}
             </div>
