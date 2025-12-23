@@ -64,7 +64,7 @@ export default function ConfirmDeleteModal({
           {message}
         </p>
 
-        <div className="flex justify-center gap-6">
+        <div className="flex justify-center" style={{ gap: 'clamp(20px, 3vw, 30px)' }}>
           <button
             type="button"
             onClick={onClose}
