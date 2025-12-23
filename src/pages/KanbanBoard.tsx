@@ -654,13 +654,15 @@ export default function KanbanBoard() {
               <div className="flex items-center" style={{ gap: 'clamp(8px, 1vw, 12px)', marginLeft: 'clamp(12px, 2vw, 20px)' }}>
                 {currentUserRole && (
                   <div
-                    className="px-2 py-1 rounded"
+                    className="px-2.5 py-1 rounded-full"
                     style={{
                       backgroundColor: currentUserRole === 'OWNER' ? '#FF8800' : '#1E80D9',
                       color: '#FFFFFF',
                       fontSize: 'clamp(10px, 1.2vw, 12px)',
-                      fontWeight: '500',
+                      fontWeight: '600',
                       whiteSpace: 'nowrap',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
                     }}
                   >
                     {currentUserRole === 'OWNER' ? 'Владелец' : 'Участник'}

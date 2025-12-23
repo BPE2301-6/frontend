@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { projectsApi } from '@shared/api/projects';
 import { projectMembersApi } from '@shared/api/projectMembers';
 import { Project, ProjectRole } from '@shared/api/types';
-import { ApiError } from '@shared/api/httpClient';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 
 interface ProjectSelectorModalProps {
@@ -253,12 +252,14 @@ export default function ProjectSelectorModal({
                         </div>
                         {proj.userRole && (
                           <div
-                            className="px-2 py-0.5 rounded"
+                            className="px-2.5 py-1 rounded-full"
                             style={{
                               backgroundColor: proj.userRole === 'OWNER' ? '#FF8800' : '#1E80D9',
                               color: '#FFFFFF',
                               fontSize: 'clamp(10px, 1.2vw, 12px)',
-                              fontWeight: '500',
+                              fontWeight: '600',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px',
                             }}
                           >
                             {proj.userRole === 'OWNER' ? 'Владелец' : 'Участник'}

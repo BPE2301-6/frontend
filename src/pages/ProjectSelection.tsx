@@ -39,11 +39,9 @@ export default function ProjectSelection() {
       return;
     }
 
-    // Если проекты загружены и их больше 0, перенаправляем на первый проект
-    if (!loading && projects.length > 0 && !viewMode && !showCreateModal) {
-      navigate(`/board?projectId=${projects[0].id}`);
-    }
-  }, [isAuthenticated, navigate, loading, projects, viewMode, showCreateModal]);
+    // Убрано автоматическое перенаправление на первый проект
+    // Пользователь может выбрать проект вручную
+  }, [isAuthenticated, navigate]);
 
   // Автоматическое изменение высоты textarea
   useEffect(() => {
