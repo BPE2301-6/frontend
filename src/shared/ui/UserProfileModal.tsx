@@ -150,31 +150,22 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         </div>
 
         {/* Информация */}
-        <div className="mb-8">
+        <div className="mb-10">
           <div
-            className="text-white mb-6"
+            className="text-white mb-8"
             style={{
               fontSize: 'clamp(16px, 2vw, 20px)',
             }}
           >
             <strong style={{ color: '#1E80D9' }}>Email:</strong> {user.email}
           </div>
-          <div
-            className="text-white mb-6"
-            style={{
-              fontSize: 'clamp(16px, 2vw, 20px)',
-            }}
-          >
-            <strong style={{ color: '#1E80D9' }}>ID:</strong>{' '}
-            <span style={{ fontSize: 'clamp(14px, 1.8vw, 18px)' }}>{user.id}</span>
-          </div>
         </div>
 
         {/* Форма редактирования */}
-        <div className="mb-8">
-          <div className="mb-6">
+        <div className="mb-10">
+          <div className="mb-8">
             <label
-              className="block text-white font-medium mb-3"
+              className="block text-white font-medium mb-4"
               style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
             >
               Имя
@@ -188,7 +179,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               style={{
                 backgroundColor: '#313236',
                 borderRadius: '15px',
-                padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
                 fontSize: 'clamp(16px, 2vw, 20px)',
                 border: 'none',
               }}
@@ -197,7 +188,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
           <div>
             <label
-              className="block text-white font-medium mb-3"
+              className="block text-white font-medium mb-4"
               style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
             >
               URL аватара (необязательно)
@@ -211,7 +202,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               style={{
                 backgroundColor: '#313236',
                 borderRadius: '15px',
-                padding: 'clamp(10px, 1.5vw, 12px) clamp(16px, 2vw, 20px)',
+                padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
                 fontSize: 'clamp(16px, 2vw, 20px)',
                 border: 'none',
               }}
@@ -243,7 +234,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         )}
 
         {/* Кнопки */}
-        <div className="flex justify-center gap-6 mt-8">
+        <div className="flex justify-center gap-8 mt-10">
           <button
             type="button"
             onClick={handleSave}

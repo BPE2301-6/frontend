@@ -102,7 +102,7 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
 
         <form onSubmit={handleSubmit}>
           {/* Название */}
-          <div className="mb-8">
+          <div className="mb-10">
             <label
               className="block text-white font-medium mb-4"
               style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
@@ -140,7 +140,7 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
           )}
 
           {/* Кнопки */}
-          <div className="flex justify-center gap-6 mt-10">
+          <div className="flex justify-center gap-8 mt-12">
             <button
               type="button"
               onClick={onClose}

@@ -2,10 +2,14 @@ import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import TaskModal from './TaskModal';
 import StatusModal from './StatusModal';
+import UserProfileModal from '@shared/ui/UserProfileModal';
+import ConfirmDeleteModal from '@shared/ui/ConfirmDeleteModal';
 import { useStatuses } from '@entities/statuses/useStatuses';
 import { useTasks } from '@entities/tasks/useTasks';
 import { useAuthStore } from '@entities/auth/useAuthStore';
+import { useProjectMembers } from '@entities/projectMembers/useProjectMembers';
 import { projectsApi } from '@shared/api/projects';
+import { tagsApi, Tag } from '@shared/api/tags';
 import { Task, TaskCreatePayload, Project, StatusCreatePayload } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
 
@@ -64,16 +68,15 @@ interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
+  tags: Tag[];
 }
 
-function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Вы уверены, что хотите удалить эту задачу?')) {
-      onDelete(task.id);
-    }
+    onDelete(task.id);
   };
 
   return (
@@ -120,6 +123,29 @@ function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
       {task.description && (
         <div className="text-[#838486] mb-2" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
           {task.description}
+        </div>
+      )}
+
+      {/* Теги */}
+      {task.tag_ids && task.tag_ids.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2 mt-2">
+          {task.tag_ids.map((tagId) => {
+            const tag = tags.find((t) => t.id === tagId);
+            if (!tag) return null;
+            return (
+              <span
+                key={tagId}
+                className="px-2 py-1 rounded-full text-xs font-medium"
+                style={{
+                  backgroundColor: tag.color || '#1E80D9',
+                  color: '#FFFFFF',
+                  fontSize: 'clamp(10px, 1.2vw, 12px)',
+                }}
+              >
+                {tag.name}
+              </span>
+            );
+          })}
         </div>
       )}
 
@@ -173,6 +199,9 @@ export default function KanbanBoard() {
   const [modalTask, setModalTask] = useState<Task | null>(null);
   const [selectedStatusId, setSelectedStatusId] = useState<string | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [deleteStatusId, setDeleteStatusId] = useState<string | null>(null);
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!projectId) {
@@ -207,6 +236,16 @@ export default function KanbanBoard() {
     deleteTask: deleteTaskApi,
     isApiError: isTaskApiError,
   } = useTasks(projectId, { q: searchQuery });
+
+  const { users: projectMembers } = useProjectMembers(projectId);
+  const [tags, setTags] = useState<Tag[]>([]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    tagsApi.list(projectId)
+      .then((res) => setTags(res.items || []))
+      .catch(() => setTags([]));
+  }, [projectId]);
 
   const tasksByStatus = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
@@ -299,6 +338,7 @@ export default function KanbanBoard() {
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTaskApi(taskId);
+      setDeleteTaskId(null);
     } catch (err) {
       const message =
         (isTaskApiError(err) && (err as ApiError).payload?.message) ||
@@ -310,6 +350,7 @@ export default function KanbanBoard() {
   const handleDeleteStatus = async (statusId: string) => {
     try {
       await deleteStatus(statusId);
+      setDeleteStatusId(null);
     } catch (err) {
       const message =
         (isStatusApiError(err) && (err as ApiError).payload?.message) ||
@@ -423,36 +464,37 @@ export default function KanbanBoard() {
             {/* Аватар пользователя */}
             {user && (
               <button
-                onClick={() => navigate('/projects')}
+                onClick={() => setShowProfileModal(true)}
+                className="cursor-pointer transition-transform duration-300 hover:scale-110 rounded-full overflow-hidden"
                 style={{
-                  width: 'clamp(50px, 6vw, 53px)',
-                  height: 'clamp(50px, 6vw, 53px)',
+                  width: 'clamp(50px, 6vw, 70px)',
+                  height: 'clamp(50px, 6vw, 70px)',
                   borderRadius: '50%',
-                  backgroundColor: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  border: 'none',
-                  padding: 0,
-                  transition: 'transform 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
+                  marginLeft: 'clamp(12px, 2vw, 20px)',
                 }}
                 title={user.name || user.email}
               >
-                <div
-                  style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '50%',
-                    border: '4px solid #757575',
-                  }}
-                />
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.name}
+                    className="w-full h-full object-cover border-2 border-[#1E80D9] rounded-full"
+                    style={{
+                      boxShadow: '0 0 20px rgba(30, 128, 217, 0.5)',
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full flex items-center justify-center text-white font-bold border-2 border-[#1E80D9] rounded-full"
+                    style={{
+                      backgroundColor: '#1E80D9',
+                      fontSize: 'clamp(24px, 3vw, 36px)',
+                      boxShadow: '0 0 20px rgba(30, 128, 217, 0.5)',
+                    }}
+                  >
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
               </button>
             )}
           </div>
@@ -532,7 +574,7 @@ export default function KanbanBoard() {
                 {status.name}
               </div>
               <button
-                onClick={() => handleDeleteStatus(status.id)}
+                onClick={() => setDeleteStatusId(status.id)}
                 className="text-white hover:text-[#FD5353] transition-colors"
                 style={{
                   width: '28px',
@@ -568,7 +610,8 @@ export default function KanbanBoard() {
                     key={task.id}
                     task={task}
                     onEdit={handleOpenModal}
-                    onDelete={handleDeleteTask}
+                    onDelete={(taskId) => setDeleteTaskId(taskId)}
+                    tags={tags}
                   />
                 ))}
 
@@ -629,6 +672,7 @@ export default function KanbanBoard() {
         task={modalTask}
         isSaving={false}
         defaultStatusId={selectedStatusId}
+        projectMembers={projectMembers}
       />
 
       <StatusModal
@@ -637,6 +681,27 @@ export default function KanbanBoard() {
         onSave={handleCreateStatus}
         isSaving={false}
         defaultPosition={statuses.length}
+      />
+
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteStatusId}
+        onClose={() => setDeleteStatusId(null)}
+        onConfirm={() => deleteStatusId && handleDeleteStatus(deleteStatusId)}
+        title="Удалить колонку?"
+        message="Вы уверены, что хотите удалить эту колонку? Все задачи в ней будут удалены."
+      />
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTaskId}
+        onClose={() => setDeleteTaskId(null)}
+        onConfirm={() => deleteTaskId && handleDeleteTask(deleteTaskId)}
+        title="Удалить задачу?"
+        message="Вы уверены, что хотите удалить эту задачу?"
       />
     </div>
   );

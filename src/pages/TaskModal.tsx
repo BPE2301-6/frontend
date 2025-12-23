@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, ChangeEvent, FormEvent } from 'react';
-import { useUsers } from '@entities/users/useUsers';
 import { useAuthStore } from '@entities/auth/useAuthStore';
-import { Task, Status, TaskCreatePayload } from '@shared/api/types';
+import { Task, Status, TaskCreatePayload, User } from '@shared/api/types';
 
 const PRIORITY_COLOR: Record<string, string> = {
   HIGH: '#FD5353',
@@ -39,11 +38,11 @@ interface TaskModalProps {
   task: Task | null;
   isSaving: boolean;
   defaultStatusId?: string | null;
+  projectMembers?: User[];
 }
 
-export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId }: TaskModalProps) {
+export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId, projectMembers = [] }: TaskModalProps) {
   const [form, setForm] = useState<TaskForm>(defaultForm);
-  const { users, loading: usersLoading } = useUsers({ limit: 50 });
   const { user } = useAuthStore();
 
   const firstStatusId = useMemo(
@@ -168,7 +167,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
 
         <form onSubmit={handleSubmit}>
           {/* Название задачи */}
-          <div className="mb-8">
+          <div className="mb-10">
             <label
               className="block text-white font-medium mb-4"
               style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
@@ -193,7 +192,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           </div>
 
           {/* Колонка (Статус) */}
-          <div className="mb-8">
+          <div className="mb-10">
             <label
               className="block text-white font-medium mb-4"
               style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
@@ -222,7 +221,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           </div>
 
           {/* Описание */}
-          <div className="mb-8">
+          <div className="mb-10">
             <label
               className="block text-white font-medium mb-4"
               style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
@@ -246,7 +245,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           </div>
 
           {/* Приоритет и Исполнитель */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-2 gap-8 mb-10">
             <div>
               <label
                 className="block text-white font-medium mb-4"
@@ -303,7 +302,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                 onChange={handleChange('assignee_id')}
               >
                 <option value="">Не выбран</option>
-                {users.map((u) => (
+                {projectMembers.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.name || u.email}
                   </option>
@@ -313,7 +312,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           </div>
 
           {/* Дедлайн и Теги */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-2 gap-8 mb-10">
             <div>
               <label
                 className="block text-white font-medium mb-4"
@@ -361,7 +360,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           </div>
 
           {/* Кнопки */}
-          <div className="flex justify-center gap-6 mt-10">
+          <div className="flex justify-center gap-8 mt-12">
             <button
               type="button"
               onClick={onClose}
