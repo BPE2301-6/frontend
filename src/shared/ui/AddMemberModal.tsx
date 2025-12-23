@@ -137,7 +137,7 @@ export default function AddMemberModal({
         </h2>
 
         {/* Поиск */}
-        <div className="mb-8">
+        <div className="mb-10">
           <input
             type="text"
             placeholder="Поиск пользователей..."
@@ -157,7 +157,7 @@ export default function AddMemberModal({
         {/* Сообщение об ошибке */}
         {error && (
           <div
-            className="text-[#FD5353] mb-6 text-center"
+            className="text-[#FD5353] mb-8 text-center"
             style={{
               fontSize: 'clamp(14px, 1.8vw, 18px)',
             }}
@@ -167,7 +167,12 @@ export default function AddMemberModal({
         )}
 
         {/* Список пользователей */}
-        <div className="mb-8" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <div className="mb-10" style={{ maxHeight: '400px', overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            div::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
           {loading ? (
             <div className="text-[#A1A1A4] text-center" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
               Загрузка...
@@ -181,12 +186,14 @@ export default function AddMemberModal({
               {users.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-4 rounded-lg hover:bg-[#313236] transition-colors"
+                  className="flex items-center justify-between rounded-lg hover:bg-[#313236] transition-colors"
                   style={{
                     backgroundColor: '#2A2D31',
+                    border: '1px solid #404040',
+                    padding: 'clamp(12px, 1.5vw, 16px)',
                   }}
                 >
-                  <div className="flex items-center" style={{ gap: '12px' }}>
+                  <div className="flex items-center flex-1" style={{ gap: '12px' }}>
                     <div
                       style={{
                         width: '40px',
@@ -227,7 +234,7 @@ export default function AddMemberModal({
                         </div>
                       )}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="text-white font-medium" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
                         {user.name || user.email}
                       </div>
@@ -241,7 +248,7 @@ export default function AddMemberModal({
                   <button
                     onClick={() => handleAddMember(user.id)}
                     disabled={addingUserId === user.id}
-                    className="text-white font-medium disabled:opacity-50"
+                    className="text-white font-medium disabled:opacity-50 flex-shrink-0"
                     style={{
                       padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
                       borderRadius: '15px',
@@ -250,6 +257,7 @@ export default function AddMemberModal({
                       border: 'none',
                       cursor: addingUserId === user.id ? 'not-allowed' : 'pointer',
                       transition: 'background-color 0.3s ease',
+                      marginLeft: '12px',
                     }}
                     onMouseEnter={(e) => {
                       if (addingUserId !== user.id) {
@@ -271,7 +279,7 @@ export default function AddMemberModal({
         </div>
 
         {/* Кнопка закрытия */}
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-10">
           <button
             type="button"
             onClick={onClose}
