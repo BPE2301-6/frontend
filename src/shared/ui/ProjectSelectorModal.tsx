@@ -269,9 +269,7 @@ export default function ProjectSelectorModal({
                         </div>
                         {proj.userRole && (
                           <div
-                            className="px-2.5 py-1 rounded-full"
                             style={{
-                              backgroundColor: proj.userRole === 'OWNER' ? '#FF8800' : '#1E80D9',
                               color: '#FFFFFF',
                               fontSize: 'clamp(10px, 1.2vw, 12px)',
                               fontWeight: '600',

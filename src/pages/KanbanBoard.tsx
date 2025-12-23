@@ -262,9 +262,18 @@ export default function KanbanBoard() {
   
   // Получаем роль текущего пользователя в проекте
   // Если пользователь является создателем проекта (lead_id), он автоматически OWNER
-  const currentUserRole = project?.lead_id === user?.id 
-    ? 'OWNER' 
-    : projectMembersData.find(m => m.user_id === user?.id)?.role;
+  const currentUserRole = useMemo(() => {
+    if (!project || !user) return undefined;
+    
+    // Сначала проверяем, является ли пользователь создателем проекта
+    if (project.lead_id === user.id) {
+      return 'OWNER';
+    }
+    
+    // Иначе ищем в списке участников
+    const member = projectMembersData.find(m => m.user_id === user.id);
+    return member?.role;
+  }, [project, user, projectMembersData]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -527,13 +536,12 @@ export default function KanbanBoard() {
       >
         <div className="flex items-center justify-between h-full">
           {/* Левая часть: название доски и поиск */}
-          <div className="flex items-center" style={{ gap: 'clamp(20px, 3vw, 40px)' }}>
+          <div className="flex items-center" style={{ gap: 'clamp(12px, 2vw, 20px)' }}>
             {/* Название доски */}
             <div
               className="font-bold text-white"
               style={{
                 fontSize: 'clamp(20px, 2.5vw, 24px)',
-                marginRight: 'clamp(10px, 1.5vw, 20px)',
               }}
             >
               {project.name.toUpperCase()}
@@ -562,7 +570,7 @@ export default function KanbanBoard() {
           </div>
 
           {/* Правая часть: кнопка добавления колонки, плюсик и аватар */}
-          <div className="flex items-center" style={{ gap: 'clamp(12px, 2vw, 20px)', marginLeft: 'clamp(24px, 3vw, 40px)' }}>
+          <div className="flex items-center" style={{ gap: 'clamp(8px, 1.5vw, 16px)', marginLeft: 'clamp(16px, 2vw, 24px)' }}>
             {/* Кнопка добавления колонки */}
             <button
               onClick={() => setIsStatusModalOpen(true)}
@@ -658,16 +666,13 @@ export default function KanbanBoard() {
               <div className="flex items-center" style={{ gap: 'clamp(8px, 1vw, 12px)', marginLeft: 'clamp(12px, 2vw, 20px)' }}>
                 {currentUserRole && (
                   <div
-                    className="px-2.5 py-1 rounded-full"
                     style={{
-                      backgroundColor: currentUserRole === 'OWNER' ? '#FF8800' : 'transparent',
-                      color: currentUserRole === 'OWNER' ? '#FFFFFF' : '#1E80D9',
+                      color: '#FFFFFF',
                       fontSize: 'clamp(10px, 1.2vw, 12px)',
                       fontWeight: '600',
                       whiteSpace: 'nowrap',
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
-                      border: currentUserRole === 'OWNER' ? 'none' : '1px solid #1E80D9',
                     }}
                   >
                     {currentUserRole === 'OWNER' ? 'Владелец' : 'Участник'}
