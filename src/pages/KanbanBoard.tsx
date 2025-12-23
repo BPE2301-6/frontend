@@ -79,7 +79,7 @@ interface TaskCardProps {
   isDragging: boolean;
 }
 
-function TaskCard({ task, onEdit, tags, onDragStart, onDragEnd, isDragging }: TaskCardProps) {
+function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDragging }: TaskCardProps) {
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -90,6 +90,11 @@ function TaskCard({ task, onEdit, tags, onDragStart, onDragEnd, isDragging }: Ta
 
   const handleDragEnd = () => {
     onDragEnd();
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Предотвращаем открытие модального окна редактирования
+    onDelete(task.id);
   };
 
   return (
@@ -200,6 +205,30 @@ function TaskCard({ task, onEdit, tags, onDragStart, onDragEnd, isDragging }: Ta
           </div>
         </div>
       )}
+
+      {/* Кнопка удаления - справа внизу */}
+      <button
+        onClick={handleDeleteClick}
+        className="absolute text-white hover:text-[#FD5353] transition-colors"
+        style={{
+          bottom: '12px',
+          right: '12px',
+          width: '24px',
+          height: '24px',
+          fontSize: '20px',
+          lineHeight: '1',
+          border: 'none',
+          backgroundColor: 'transparent',
+          cursor: 'pointer',
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        title="Удалить задачу"
+      >
+        ×
+      </button>
     </div>
   );
 }
