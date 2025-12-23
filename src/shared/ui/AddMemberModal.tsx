@@ -128,7 +128,7 @@ export default function AddMemberModal({
 
         {/* Заголовок */}
         <h2
-          className="font-bold text-white mb-8 text-center"
+          className="font-bold text-white mb-12 text-center"
           style={{
             fontSize: 'clamp(20px, 2.5vw, 24px)',
           }}
@@ -138,6 +138,12 @@ export default function AddMemberModal({
 
         {/* Поиск */}
         <div className="mb-10">
+          <label
+            className="block text-white font-medium mb-4"
+            style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+          >
+            Поиск пользователей
+          </label>
           <input
             type="text"
             placeholder="Поиск пользователей..."
@@ -157,7 +163,7 @@ export default function AddMemberModal({
         {/* Сообщение об ошибке */}
         {error && (
           <div
-            className="text-[#FD5353] mb-8 text-center"
+            className="text-[#FD5353] mb-10 text-center"
             style={{
               fontSize: 'clamp(14px, 1.8vw, 18px)',
             }}
@@ -167,7 +173,7 @@ export default function AddMemberModal({
         )}
 
         {/* Список пользователей */}
-        <div className="mb-10" style={{ maxHeight: '400px', overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div className="mb-12" style={{ maxHeight: '400px', overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <style>{`
             div::-webkit-scrollbar {
               display: none;
@@ -182,15 +188,15 @@ export default function AddMemberModal({
               {searchQuery ? 'Пользователи не найдены' : 'Введите имя или email для поиска'}
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {users.map((user) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0', border: '1px solid #404040', borderRadius: '15px', overflow: 'hidden' }}>
+              {users.map((user, index) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between rounded-lg hover:bg-[#313236] transition-colors"
+                  className="flex items-center justify-between transition-colors"
                   style={{
-                    backgroundColor: '#2A2D31',
-                    border: '1px solid #404040',
+                    borderBottom: index < users.length - 1 ? '1px solid #404040' : 'none',
                     padding: 'clamp(12px, 1.5vw, 16px)',
+                    backgroundColor: 'transparent',
                   }}
                 >
                   <div className="flex items-center flex-1" style={{ gap: '12px' }}>
@@ -234,44 +240,46 @@ export default function AddMemberModal({
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <div className="text-white font-medium" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                        {user.name || user.email}
-                      </div>
-                      {user.name && (
-                        <div className="text-[#838486]" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
-                          {user.email}
+                    <div className="flex-1 flex items-center justify-between">
+                      <div>
+                        <div className="text-white font-medium" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
+                          {user.name || user.email}
                         </div>
-                      )}
+                        {user.name && (
+                          <div className="text-[#838486]" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
+                            {user.email}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleAddMember(user.id)}
+                        disabled={addingUserId === user.id}
+                        className="text-white font-medium disabled:opacity-50 flex-shrink-0"
+                        style={{
+                          padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
+                          borderRadius: '15px',
+                          backgroundColor: '#1E80D9',
+                          fontSize: 'clamp(14px, 1.5vw, 16px)',
+                          border: 'none',
+                          cursor: addingUserId === user.id ? 'not-allowed' : 'pointer',
+                          transition: 'background-color 0.3s ease',
+                          marginLeft: '16px',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (addingUserId !== user.id) {
+                            e.currentTarget.style.backgroundColor = '#166BB7';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (addingUserId !== user.id) {
+                            e.currentTarget.style.backgroundColor = '#1E80D9';
+                          }
+                        }}
+                      >
+                        {addingUserId === user.id ? 'Добавление...' : 'Добавить'}
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleAddMember(user.id)}
-                    disabled={addingUserId === user.id}
-                    className="text-white font-medium disabled:opacity-50 flex-shrink-0"
-                    style={{
-                      padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
-                      borderRadius: '15px',
-                      backgroundColor: '#1E80D9',
-                      fontSize: 'clamp(14px, 1.5vw, 16px)',
-                      border: 'none',
-                      cursor: addingUserId === user.id ? 'not-allowed' : 'pointer',
-                      transition: 'background-color 0.3s ease',
-                      marginLeft: '12px',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (addingUserId !== user.id) {
-                        e.currentTarget.style.backgroundColor = '#166BB7';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (addingUserId !== user.id) {
-                        e.currentTarget.style.backgroundColor = '#1E80D9';
-                      }
-                    }}
-                  >
-                    {addingUserId === user.id ? 'Добавление...' : 'Добавить'}
-                  </button>
                 </div>
               ))}
             </div>
@@ -279,7 +287,7 @@ export default function AddMemberModal({
         </div>
 
         {/* Кнопка закрытия */}
-        <div className="flex justify-center mt-10">
+        <div className="flex justify-center" style={{ marginTop: 'clamp(40px, 5vw, 55px)' }}>
           <button
             type="button"
             onClick={onClose}

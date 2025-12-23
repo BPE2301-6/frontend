@@ -84,13 +84,14 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
 
   return (
     <div
-      className="bg-[#313236] rounded-[32px] cursor-pointer hover:opacity-90 transition-opacity relative"
+      className="bg-[#313236] cursor-pointer hover:opacity-90 transition-opacity relative"
       onClick={() => onEdit(task)}
       style={{
         marginBottom: 'clamp(16px, 2vw, 24px)',
         padding: 'clamp(16px, 2vw, 20px)',
         width: '100%',
         border: '1px solid #404040',
+        borderRadius: '20px',
       }}
     >
       <button
@@ -111,21 +112,26 @@ function TaskCard({ task, onEdit, onDelete, tags }: TaskCardProps) {
         ×
       </button>
 
-      {/* Заголовок и приоритет */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="font-medium text-white flex-1 pr-3" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)', lineHeight: '1.4' }}>
+      {/* Точка приоритета - справа в углу */}
+      <div
+        className="absolute"
+        style={{
+          top: '12px',
+          right: '12px',
+          width: '14px',
+          height: '14px',
+          borderRadius: '50%',
+          backgroundColor: priorityColor,
+          flexShrink: 0,
+          zIndex: 5,
+        }}
+      />
+
+      {/* Заголовок */}
+      <div className="mb-3 pr-4">
+        <div className="font-medium text-white" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)', lineHeight: '1.4' }}>
           {task.title}
         </div>
-        <div
-          className="absolute top-3 right-3"
-          style={{
-            width: '16px',
-            height: '16px',
-            borderRadius: '50%',
-            backgroundColor: priorityColor,
-            flexShrink: 0,
-          }}
-        />
       </div>
 
       {/* Описание */}
