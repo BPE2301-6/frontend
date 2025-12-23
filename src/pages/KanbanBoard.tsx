@@ -349,6 +349,18 @@ export default function KanbanBoard() {
 
   const handleDeleteStatus = async (statusId: string) => {
     try {
+      // Сначала удаляем все задачи в этой колонке
+      const tasksInStatus = tasksByStatus[statusId] || [];
+      for (const task of tasksInStatus) {
+        try {
+          await deleteTaskApi(task.id);
+        } catch (taskErr) {
+          // Пропускаем ошибки удаления отдельных задач
+          console.error(`Ошибка удаления задачи ${task.id}:`, taskErr);
+        }
+      }
+      
+      // Затем удаляем саму колонку
       await deleteStatus(statusId);
       setDeleteStatusId(null);
     } catch (err) {
@@ -365,12 +377,18 @@ export default function KanbanBoard() {
 
   return (
     <div className="min-h-screen bg-[#242528] text-white font-montserrat">
-      {/* Верхнее меню */}
+      {/* Верхнее меню - фиксированный sidebar */}
       <header
-        className="w-full border-b border-[#1E80D9]"
+        className="border-b border-[#1E80D9]"
         style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
           height: 'clamp(120px, 15vh, 148px)',
           padding: 'clamp(20px, 3vw, 26px) clamp(40px, 5vw, 55px)',
+          backgroundColor: '#242528',
+          zIndex: 1000,
         }}
       >
         <div className="flex items-center justify-between h-full">
@@ -409,7 +427,7 @@ export default function KanbanBoard() {
             </div>
           </div>
 
-          {/* Правая часть: кнопка добавления и аватар */}
+          {/* Правая часть: кнопка добавления колонки, плюсик и аватар */}
           <div className="flex items-center" style={{ gap: 'clamp(12px, 2vw, 20px)' }}>
             {/* Кнопка добавления колонки */}
             <button
@@ -461,16 +479,18 @@ export default function KanbanBoard() {
               +
             </button>
 
-            {/* Аватар пользователя */}
+            {/* Аватар пользователя - круглый, в правом углу */}
             {user && (
               <button
                 onClick={() => setShowProfileModal(true)}
-                className="cursor-pointer transition-transform duration-300 hover:scale-110 rounded-full overflow-hidden"
+                className="cursor-pointer transition-transform duration-300 hover:scale-110"
                 style={{
                   width: 'clamp(50px, 6vw, 70px)',
                   height: 'clamp(50px, 6vw, 70px)',
                   borderRadius: '50%',
+                  overflow: 'hidden',
                   marginLeft: 'clamp(12px, 2vw, 20px)',
+                  flexShrink: 0,
                 }}
                 title={user.name || user.email}
               >
@@ -478,15 +498,17 @@ export default function KanbanBoard() {
                   <img
                     src={user.avatar_url}
                     alt={user.name}
-                    className="w-full h-full object-cover border-2 border-[#1E80D9] rounded-full"
+                    className="w-full h-full object-cover border-2 border-[#1E80D9]"
                     style={{
+                      borderRadius: '50%',
                       boxShadow: '0 0 20px rgba(30, 128, 217, 0.5)',
                     }}
                   />
                 ) : (
                   <div
-                    className="w-full h-full flex items-center justify-center text-white font-bold border-2 border-[#1E80D9] rounded-full"
+                    className="w-full h-full flex items-center justify-center text-white font-bold border-2 border-[#1E80D9]"
                     style={{
+                      borderRadius: '50%',
                       backgroundColor: '#1E80D9',
                       fontSize: 'clamp(24px, 3vw, 36px)',
                       boxShadow: '0 0 20px rgba(30, 128, 217, 0.5)',
@@ -504,11 +526,12 @@ export default function KanbanBoard() {
       {/* Ошибки с автоскрытием */}
       <ErrorDisplay error={tasksError || statusesError} />
 
-      {/* Колонки */}
+      {/* Колонки - с отступом сверху для фиксированного header */}
       <div
         className="flex items-start"
         style={{
           padding: 'clamp(40px, 5vw, 55px)',
+          paddingTop: `calc(clamp(40px, 5vw, 55px) + clamp(120px, 15vh, 148px))`,
           gap: 'clamp(20px, 3vw, 30px)',
           minHeight: 'calc(100vh - clamp(120px, 15vh, 148px))',
         }}
