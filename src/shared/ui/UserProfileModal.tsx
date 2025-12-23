@@ -120,11 +120,12 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         {/* Аватар с кнопкой изменения */}
         <div className="flex flex-col items-center mb-6">
           <div
-            className="rounded-full overflow-hidden border-4 border-[#1E80D9]"
+            className="overflow-hidden border-4 border-[#1E80D9]"
             style={{
               width: 'clamp(120px, 15vw, 180px)',
               height: 'clamp(120px, 15vw, 180px)',
               borderRadius: '50%',
+              aspectRatio: '1 / 1',
             }}
           >
             {user.avatar_url ? (
@@ -134,6 +135,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 className="w-full h-full object-cover"
                 style={{
                   borderRadius: '50%',
+                  display: 'block',
                 }}
               />
             ) : (
@@ -143,6 +145,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                   backgroundColor: '#1E80D9',
                   fontSize: 'clamp(48px, 6vw, 72px)',
                   borderRadius: '50%',
+                  display: 'flex',
                 }}
               >
                 {user.name.charAt(0).toUpperCase()}
@@ -155,7 +158,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               // Заглушка для загрузки фото (minio не поднята)
               alert('Функция загрузки фотографии будет доступна после настройки MinIO');
             }}
-            className="text-white font-medium mt-4"
+            className="text-white font-medium mt-2"
             style={{
               padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
               borderRadius: '15px',
@@ -238,7 +241,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         )}
 
         {/* Кнопки */}
-        <div className="flex justify-center gap-10 mt-14">
+        <div className="flex justify-center gap-12 mt-14">
           <button
             type="button"
             onClick={handleSave}
