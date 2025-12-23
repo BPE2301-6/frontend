@@ -11,7 +11,6 @@ interface UserProfileModalProps {
 export default function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
   const { user, logout } = useAuthStore();
   const [name, setName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -19,7 +18,6 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
   useEffect(() => {
     if (isOpen && user) {
       setName(user.name || '');
-      setAvatarUrl(user.avatar_url || '');
       setError('');
       setSuccess('');
     }
@@ -50,7 +48,6 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
     try {
       const updatedUser = await usersApi.updateCurrentUser({
         name: name.trim() || undefined,
-        avatar_url: avatarUrl.trim() || null,
       });
       
       useAuthStore.getState().setUser(updatedUser);
@@ -112,7 +109,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
         {/* Заголовок */}
         <h2
-          className="font-bold text-white mb-8 text-center"
+          className="font-bold text-white mb-12 text-center"
           style={{
             fontSize: 'clamp(20px, 2.5vw, 24px)',
           }}
@@ -120,13 +117,14 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
           Профиль пользователя
         </h2>
 
-        {/* Аватар */}
-        <div className="flex justify-center mb-8">
+        {/* Аватар с кнопкой изменения */}
+        <div className="flex flex-col items-center mb-6">
           <div
             className="rounded-full overflow-hidden border-4 border-[#1E80D9]"
             style={{
               width: 'clamp(120px, 15vw, 180px)',
               height: 'clamp(120px, 15vw, 180px)',
+              borderRadius: '50%',
             }}
           >
             {user.avatar_url ? (
@@ -134,6 +132,9 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 src={user.avatar_url}
                 alt={user.name}
                 className="w-full h-full object-cover"
+                style={{
+                  borderRadius: '50%',
+                }}
               />
             ) : (
               <div
@@ -141,12 +142,38 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
                 style={{
                   backgroundColor: '#1E80D9',
                   fontSize: 'clamp(48px, 6vw, 72px)',
+                  borderRadius: '50%',
                 }}
               >
                 {user.name.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              // Заглушка для загрузки фото (minio не поднята)
+              alert('Функция загрузки фотографии будет доступна после настройки MinIO');
+            }}
+            className="text-white font-medium mt-4"
+            style={{
+              padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
+              borderRadius: '15px',
+              backgroundColor: '#1E80D9',
+              fontSize: 'clamp(14px, 1.5vw, 16px)',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#166BB7';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#1E80D9';
+            }}
+          >
+            {user.avatar_url ? 'Изменить фото' : 'Добавить фото'}
+          </button>
         </div>
 
         {/* Информация */}
@@ -162,8 +189,8 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         </div>
 
         {/* Форма редактирования */}
-        <div className="mb-10">
-          <div className="mb-8">
+        <div className="mb-12">
+          <div>
             <label
               className="block text-white font-medium mb-4"
               style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
@@ -175,29 +202,6 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
               placeholder="Имя"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-white placeholder:text-gray-400 outline-none"
-              style={{
-                backgroundColor: '#313236',
-                borderRadius: '15px',
-                padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
-                fontSize: 'clamp(16px, 2vw, 20px)',
-                border: 'none',
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-white font-medium mb-4"
-              style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
-            >
-              URL аватара (необязательно)
-            </label>
-            <input
-              type="url"
-              placeholder="URL аватара"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
               className="w-full text-white placeholder:text-gray-400 outline-none"
               style={{
                 backgroundColor: '#313236',
@@ -234,14 +238,14 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         )}
 
         {/* Кнопки */}
-        <div className="flex justify-center gap-8 mt-10">
+        <div className="flex justify-center gap-10 mt-14">
           <button
             type="button"
             onClick={handleSave}
             disabled={loading}
             className="text-white font-bold disabled:opacity-50"
             style={{
-              width: 'clamp(140px, 16vw, 180px)',
+              width: 'clamp(120px, 14vw, 150px)',
               height: 'clamp(45px, 5.5vw, 54px)',
               borderRadius: '15px',
               backgroundColor: '#FF8800',
@@ -269,7 +273,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
             onClick={onClose}
             className="text-white font-bold"
             style={{
-              width: 'clamp(140px, 16vw, 180px)',
+              width: 'clamp(120px, 14vw, 150px)',
               height: 'clamp(45px, 5.5vw, 54px)',
               borderRadius: '15px',
               backgroundColor: '#838486',
@@ -293,7 +297,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
             onClick={handleLogout}
             className="text-white font-bold"
             style={{
-              width: 'clamp(140px, 16vw, 180px)',
+              width: 'clamp(120px, 14vw, 150px)',
               height: 'clamp(45px, 5.5vw, 54px)',
               borderRadius: '15px',
               backgroundColor: '#FD5353',
