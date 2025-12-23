@@ -118,7 +118,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         </h2>
 
         {/* Аватар с кнопкой изменения */}
-        <div className="flex flex-col items-center mb-10">
+        <div className="flex flex-col items-center mb-10 mt-10">
           <div
             className="overflow-hidden border-4 border-[#1E80D9]"
             style={{
@@ -252,7 +252,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         )}
 
         {/* Кнопки */}
-        <div className="flex justify-center" style={{ marginTop: 'clamp(40px, 5vw, 55px)', gap: 'clamp(30px, 4vw, 50px)' }}>
+        <div className="flex justify-center" style={{ marginTop: 'clamp(20px, 2.5vw, 30px)', gap: 'clamp(30px, 4vw, 50px)' }}>
           <button
             type="button"
             onClick={handleSave}
