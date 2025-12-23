@@ -1,5 +1,4 @@
 import { httpRequest } from './httpClient';
-import { Task } from './types';
 
 export interface Tag {
   id: string;
@@ -26,6 +25,7 @@ export interface SearchQueryParams {
   q: string;
   project_id?: string;
   scope?: string; // 'tasks,tags,comments' или отдельные значения
+  [key: string]: string | number | boolean | string[] | undefined | null;
 }
 
 export const searchApi = {
