@@ -137,13 +137,7 @@ export default function AddMemberModal({
         </h2>
 
         {/* Поиск */}
-        <div className="mb-10">
-          <label
-            className="block text-white font-medium mb-4"
-            style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
-          >
-            Поиск пользователей
-          </label>
+        <div className="mb-12">
           <input
             type="text"
             placeholder="Поиск пользователей..."
@@ -199,7 +193,7 @@ export default function AddMemberModal({
                     backgroundColor: 'transparent',
                   }}
                 >
-                  <div className="flex items-center flex-1" style={{ gap: '12px' }}>
+                  <div className="flex items-center" style={{ gap: '12px', flex: '1', minWidth: 0 }}>
                     <div
                       style={{
                         width: '40px',
@@ -240,45 +234,43 @@ export default function AddMemberModal({
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 flex items-center justify-between">
-                      <div>
-                        <div className="text-white font-medium" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-                          {user.name || user.email}
-                        </div>
-                        {user.name && (
-                          <div className="text-[#838486]" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
-                            {user.email}
-                          </div>
-                        )}
+                    <div className="flex-1" style={{ minWidth: 0 }}>
+                      <div className="text-white font-medium" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
+                        {user.name || user.email}
                       </div>
-                      <button
-                        onClick={() => handleAddMember(user.id)}
-                        disabled={addingUserId === user.id}
-                        className="text-white font-medium disabled:opacity-50 flex-shrink-0"
-                        style={{
-                          padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
-                          borderRadius: '15px',
-                          backgroundColor: '#1E80D9',
-                          fontSize: 'clamp(14px, 1.5vw, 16px)',
-                          border: 'none',
-                          cursor: addingUserId === user.id ? 'not-allowed' : 'pointer',
-                          transition: 'background-color 0.3s ease',
-                          marginLeft: '16px',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (addingUserId !== user.id) {
-                            e.currentTarget.style.backgroundColor = '#166BB7';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (addingUserId !== user.id) {
-                            e.currentTarget.style.backgroundColor = '#1E80D9';
-                          }
-                        }}
-                      >
-                        {addingUserId === user.id ? 'Добавление...' : 'Добавить'}
-                      </button>
+                      {user.name && (
+                        <div className="text-[#838486]" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)' }}>
+                          {user.email}
+                        </div>
+                      )}
                     </div>
+                    <button
+                      onClick={() => handleAddMember(user.id)}
+                      disabled={addingUserId === user.id}
+                      className="text-white font-medium disabled:opacity-50 flex-shrink-0"
+                      style={{
+                        padding: 'clamp(8px, 1vw, 10px) clamp(16px, 2vw, 20px)',
+                        borderRadius: '15px',
+                        backgroundColor: '#1E80D9',
+                        fontSize: 'clamp(14px, 1.5vw, 16px)',
+                        border: 'none',
+                        cursor: addingUserId === user.id ? 'not-allowed' : 'pointer',
+                        transition: 'background-color 0.3s ease',
+                        marginLeft: '16px',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (addingUserId !== user.id) {
+                          e.currentTarget.style.backgroundColor = '#166BB7';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (addingUserId !== user.id) {
+                          e.currentTarget.style.backgroundColor = '#1E80D9';
+                        }
+                      }}
+                    >
+                      {addingUserId === user.id ? 'Добавление...' : 'Добавить'}
+                    </button>
                   </div>
                 </div>
               ))}
