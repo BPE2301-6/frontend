@@ -42,9 +42,10 @@ interface TaskModalProps {
   defaultStatusId?: string | null;
   projectMembers?: User[];
   tags?: Array<{ id: string; name: string }>;
+  onChecklistChange?: () => void; // Callback для обновления чеклистов на доске
 }
 
-export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId, projectMembers = [], tags = [] }: TaskModalProps) {
+export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId, projectMembers = [], tags = [], onChecklistChange }: TaskModalProps) {
   const [form, setForm] = useState<TaskForm>(defaultForm);
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [checklistItems, setChecklistItems] = useState<Record<string, ChecklistItem[]>>({});
@@ -135,6 +136,8 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       await checklistsApi.create(task.id);
       // Перезагружаем чеклисты для обновления состояния
       await loadChecklists(task.id);
+      // Обновляем чеклисты на доске
+      onChecklistChange?.();
     } catch (error) {
       console.error('Ошибка создания чеклиста:', error);
       const message = 
@@ -154,6 +157,8 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       await checklistsApi.delete(checklistId);
       // Перезагружаем чеклисты для обновления состояния
       await loadChecklists(task.id);
+      // Обновляем чеклисты на доске
+      onChecklistChange?.();
     } catch (error) {
       console.error('Ошибка удаления чеклиста:', error);
       const message = 
@@ -176,6 +181,8 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       // Перезагружаем чеклисты для обновления состояния
       await loadChecklists(task.id);
       setNewItemContent(prev => ({ ...prev, [checklistId]: '' }));
+      // Обновляем чеклисты на доске
+      onChecklistChange?.();
     } catch (error) {
       console.error('Ошибка создания элемента чеклиста:', error);
       const message = 
@@ -195,6 +202,8 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       await checklistsApi.deleteItem(item.id);
       // Перезагружаем чеклисты для обновления состояния
       await loadChecklists(task.id);
+      // Обновляем чеклисты на доске
+      onChecklistChange?.();
     } catch (error) {
       console.error('Ошибка удаления элемента:', error);
       const message = 

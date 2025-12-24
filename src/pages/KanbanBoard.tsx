@@ -114,11 +114,11 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
       const updatedItem = await checklistsApi.updateItem(item.id, {
         is_done: !item.is_done,
       });
-      const items = checklistItems[item.checklist_id] || [];
-      setChecklistItems({
-        ...checklistItems,
-        [item.checklist_id]: items.map(i => i.id === item.id ? updatedItem : i),
-      });
+      // Используем функциональное обновление для надежности
+      setChecklistItems(prev => ({
+        ...prev,
+        [item.checklist_id]: (prev[item.checklist_id] || []).map(i => i.id === item.id ? updatedItem : i),
+      }));
     } catch (error) {
       console.error('Ошибка обновления элемента чеклиста:', error);
     }
@@ -1096,6 +1096,10 @@ export default function KanbanBoard() {
         defaultStatusId={selectedStatusId}
         projectMembers={projectMembers}
         tags={tags}
+        onChecklistChange={() => {
+          // Обновляем ключ для обновления чеклистов в карточках задач после изменений
+          setChecklistRefreshKey(prev => prev + 1);
+        }}
       />
 
       <StatusModal
