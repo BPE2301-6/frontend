@@ -78,9 +78,10 @@ interface TaskCardProps {
   onDragStart: (taskId: string) => void;
   onDragEnd: () => void;
   isDragging: boolean;
+  refreshKey?: number; // Ключ для принудительного обновления чеклистов
 }
 
-function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDragging }: TaskCardProps) {
+function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDragging, refreshKey }: TaskCardProps) {
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [checklistItems, setChecklistItems] = useState<Record<string, ChecklistItem[]>>({});
@@ -104,7 +105,7 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
     };
     
     loadChecklists();
-  }, [task.id]);
+  }, [task.id, refreshKey]); // Добавляем refreshKey для обновления после изменений
   
   // Переключение состояния элемента чеклиста
   const handleToggleChecklistItem = async (e: React.MouseEvent, item: ChecklistItem) => {
@@ -559,6 +560,8 @@ export default function KanbanBoard() {
         setIsModalOpen(false);
         setModalTask(null);
         setSelectedStatusId(null);
+        // Обновляем ключ для обновления чеклистов в карточках задач
+        setChecklistRefreshKey(prev => prev + 1);
       } else {
         // Создание новой задачи - оставляем модальное окно открытым
         // modalTask уже обновлен выше
@@ -965,6 +968,7 @@ export default function KanbanBoard() {
                     onDragStart={setDraggedTaskId}
                     onDragEnd={() => setDraggedTaskId(null)}
                     isDragging={draggedTaskId === task.id}
+                    refreshKey={checklistRefreshKey}
                   />
                 ))}
 
@@ -1019,6 +1023,8 @@ export default function KanbanBoard() {
           setIsModalOpen(false);
           setModalTask(null);
           setSelectedStatusId(null);
+          // Обновляем ключ для обновления чеклистов в карточках задач
+          setChecklistRefreshKey(prev => prev + 1);
         }}
         onSave={handleSaveTask}
         statuses={statuses}

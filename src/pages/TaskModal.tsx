@@ -132,9 +132,9 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
     }
     if (!task?.id) return;
     try {
-      const newChecklist = await checklistsApi.create(task.id);
-      setChecklists([...checklists, newChecklist]);
-      setChecklistItems({ ...checklistItems, [newChecklist.id]: [] });
+      await checklistsApi.create(task.id);
+      // Перезагружаем чеклисты для обновления состояния
+      await loadChecklists(task.id);
     } catch (error) {
       console.error('Ошибка создания чеклиста:', error);
       const message = 
@@ -148,16 +148,12 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
   const handleDeleteChecklist = async (e: React.MouseEvent, checklistId: string) => {
     e.stopPropagation();
     e.preventDefault();
+    if (!task?.id) return;
     if (!confirm('Удалить чеклист?')) return;
     try {
       await checklistsApi.delete(checklistId);
-      // Обновляем состояние после успешного удаления
-      setChecklists(prev => prev.filter(c => c.id !== checklistId));
-      setChecklistItems(prev => {
-        const newItems = { ...prev };
-        delete newItems[checklistId];
-        return newItems;
-      });
+      // Перезагружаем чеклисты для обновления состояния
+      await loadChecklists(task.id);
     } catch (error) {
       console.error('Ошибка удаления чеклиста:', error);
       const message = 
@@ -170,18 +166,15 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
   // Создание элемента чеклиста
   const handleCreateItem = async (checklistId: string) => {
     const content = newItemContent[checklistId]?.trim();
-    if (!content) return;
+    if (!content || !task?.id) return;
     
     try {
-      const items = checklistItems[checklistId] || [];
-      const newItem = await checklistsApi.createItem(checklistId, {
+      await checklistsApi.createItem(checklistId, {
         content,
-        position: items.length,
+        position: (checklistItems[checklistId] || []).length,
       });
-      setChecklistItems(prev => ({
-        ...prev,
-        [checklistId]: [...items, newItem],
-      }));
+      // Перезагружаем чеклисты для обновления состояния
+      await loadChecklists(task.id);
       setNewItemContent(prev => ({ ...prev, [checklistId]: '' }));
     } catch (error) {
       console.error('Ошибка создания элемента чеклиста:', error);
@@ -197,16 +190,11 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
   const handleDeleteItem = async (e: React.MouseEvent, item: ChecklistItem) => {
     e.stopPropagation();
     e.preventDefault();
+    if (!task?.id) return;
     try {
       await checklistsApi.deleteItem(item.id);
-      // Обновляем состояние после успешного удаления
-      setChecklistItems(prev => {
-        const items = prev[item.checklist_id] || [];
-        return {
-          ...prev,
-          [item.checklist_id]: items.filter(i => i.id !== item.id),
-        };
-      });
+      // Перезагружаем чеклисты для обновления состояния
+      await loadChecklists(task.id);
     } catch (error) {
       console.error('Ошибка удаления элемента:', error);
       const message = 
@@ -310,7 +298,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                 backgroundColor: '#313236',
                 borderRadius: '15px',
                 padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
-                fontSize: 'clamp(16px, 2vw, 20px)',
+                fontSize: 'clamp(14px, 1.8vw, 18px)',
                 border: 'none',
               }}
               placeholder="Название задачи"
@@ -334,7 +322,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                 backgroundColor: '#313236',
                 borderRadius: '15px',
                 padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
-                fontSize: 'clamp(16px, 2vw, 20px)',
+                fontSize: 'clamp(14px, 1.8vw, 18px)',
                 border: 'none',
               }}
               value={form.status_id || firstStatusId}
@@ -363,7 +351,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                 backgroundColor: '#313236',
                 borderRadius: '20px',
                 padding: 'clamp(12px, 2vw, 16px)',
-                fontSize: 'clamp(14px, 1.5vw, 16px)',
+                fontSize: 'clamp(14px, 1.8vw, 18px)',
                 border: 'none',
                 minHeight: 'clamp(100px, 12vw, 120px)',
               }}
@@ -389,7 +377,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                     backgroundColor: '#313236',
                     borderRadius: '15px',
                     padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
-                    fontSize: 'clamp(16px, 2vw, 20px)',
+                    fontSize: 'clamp(14px, 1.8vw, 18px)',
                     border: 'none',
                   }}
                   value={form.priority}
@@ -424,7 +412,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                   backgroundColor: '#313236',
                   borderRadius: '15px',
                   padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
-                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  fontSize: 'clamp(14px, 1.8vw, 18px)',
                   border: 'none',
                 }}
                 value={form.assignee_id}
@@ -456,7 +444,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                   backgroundColor: '#313236',
                   borderRadius: '15px',
                   padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
-                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  fontSize: 'clamp(14px, 1.8vw, 18px)',
                   border: 'none',
                 }}
                 value={form.due_date}
@@ -478,7 +466,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                   backgroundColor: '#313236',
                   borderRadius: '15px',
                   padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
-                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  fontSize: 'clamp(14px, 1.8vw, 18px)',
                   border: 'none',
                 }}
                 placeholder="Теги через запятую"
@@ -488,9 +476,14 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
             </div>
           </div>
 
+          {/* Разделитель перед чеклистами */}
+          {task?.id && (
+            <div style={{ height: '1px', backgroundColor: '#404040', marginTop: 'clamp(20px, 2.5vw, 30px)', marginBottom: 'clamp(20px, 2.5vw, 30px)' }} />
+          )}
+
           {/* Чеклисты - показываем только для существующих задач */}
           {task?.id && (
-            <div className="mb-10" style={{ marginTop: 'clamp(20px, 2.5vw, 30px)' }}>
+            <div className="mb-10">
               <div className="flex justify-center mb-4">
                 <button
                   type="button"

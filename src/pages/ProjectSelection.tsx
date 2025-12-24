@@ -618,7 +618,7 @@ export default function ProjectSelection() {
                 style={{
                   height: 'clamp(70px, 8vw, 90px)',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(24px, 2.5vw, 32px)',
+                  fontSize: 'clamp(14px, 1.8vw, 18px)',
                   paddingLeft: 'clamp(32px, 4vw, 48px)',
                   paddingRight: 'clamp(32px, 4vw, 48px)',
                   backgroundColor: '#2A2D31',
@@ -637,7 +637,7 @@ export default function ProjectSelection() {
                   minHeight: 'clamp(100px, 12vw, 150px)',
                   maxHeight: '400px',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(20px, 2vw, 28px)',
+                  fontSize: 'clamp(14px, 1.8vw, 18px)',
                   padding: 'clamp(24px, 3vw, 36px)',
                   backgroundColor: '#2A2D31',
                   marginBottom: '30px',

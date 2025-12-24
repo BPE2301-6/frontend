@@ -148,7 +148,7 @@ export default function AddMemberModal({
               backgroundColor: '#313236',
               borderRadius: '15px',
               padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
-              fontSize: 'clamp(16px, 2vw, 20px)',
+              fontSize: 'clamp(14px, 1.8vw, 18px)',
               border: 'none',
             }}
           />
