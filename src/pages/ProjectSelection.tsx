@@ -234,7 +234,7 @@ export default function ProjectSelection() {
               boxShadow: viewMode === 'search' ? '0 0 20px rgba(30, 128, 217, 0.6), 0 0 30px rgba(30, 128, 217, 0.4)' : '0 4px 6px rgba(0, 0, 0, 0.1)',
               transform: viewMode === 'search' ? 'scale(1.05)' : 'scale(1)',
               fontSize: 'clamp(28px, 3.5vw, 52px)',
-              marginRight: 'clamp(8px, 1vw, 16px)',
+              marginRight: 'clamp(24px, 3vw, 40px)',
               border: 'none',
               cursor: 'pointer',
               transition: 'background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
@@ -326,7 +326,7 @@ export default function ProjectSelection() {
                   type="submit"
                   className="text-white font-medium leading-tight lowercase"
                   style={{
-                    width: 'clamp(120px, 15vw, 180px)',
+                    width: 'clamp(150px, 18vw, 220px)',
                     height: 'clamp(70px, 8vw, 90px)',
                     borderRadius: '9999px',
                     backgroundColor: '#1E80D9',
@@ -390,7 +390,7 @@ export default function ProjectSelection() {
 
             {!loading && !error && projects.length > 0 && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 w-full" style={{ gap: 'clamp(24px, 3vw, 40px)', marginTop: 'clamp(40px, 5vw, 60px)' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 w-full" style={{ gap: 'clamp(24px, 3vw, 40px)', marginTop: 'clamp(40px, 5vw, 60px)', padding: 'clamp(16px, 2vw, 24px)' }}>
                   {projects.map((project) => (
                     <button
                       key={project.id}
@@ -401,6 +401,12 @@ export default function ProjectSelection() {
                         border: '3px solid #1E80D9',
                         borderRadius: '16px',
                         padding: 'clamp(24px, 3vw, 32px)',
+                        width: '100%',
+                        minHeight: 'clamp(200px, 25vw, 280px)',
+                        maxHeight: 'clamp(200px, 25vw, 280px)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start',
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.02)';
@@ -413,15 +419,6 @@ export default function ProjectSelection() {
                         e.currentTarget.style.borderColor = '#1E80D9';
                       }}
                     >
-                    <div
-                      className="font-bold mb-2"
-                      style={{
-                        fontSize: 'clamp(24px, 3vw, 32px)',
-                        color: '#1E80D9',
-                      }}
-                    >
-                      {project.key}
-                    </div>
                     <div
                       className="font-semibold mb-2 text-white"
                       style={{
