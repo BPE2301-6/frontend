@@ -209,64 +209,70 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
         </div>
       )}
 
-      {/* Чеклисты */}
+      {/* Чеклисты - между описанием и датой */}
       {checklists.length > 0 && (
-        <div className="mb-3">
-          {checklists.map((checklist) => {
-            const items = checklistItems[checklist.id] || [];
-            if (items.length === 0) return null;
-            
-            return (
-              <div key={checklist.id} style={{ marginBottom: 'clamp(8px, 1vw, 12px)' }}>
-                {items.slice(0, 3).map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-2"
-                    style={{
-                      marginBottom: 'clamp(4px, 0.5vw, 6px)',
-                    }}
-                    onClick={(e) => handleToggleChecklistItem(e, item)}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={item.is_done}
-                      onChange={() => {}}
+        <>
+          <div className="mb-3">
+            {checklists.map((checklist) => {
+              const items = checklistItems[checklist.id] || [];
+              if (items.length === 0) return null;
+              
+              return (
+                <div key={checklist.id} style={{ marginBottom: 'clamp(6px, 0.8vw, 8px)' }}>
+                  {items.slice(0, 3).map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-2"
+                      style={{
+                        marginBottom: 'clamp(4px, 0.5vw, 6px)',
+                      }}
                       onClick={(e) => handleToggleChecklistItem(e, item)}
-                      style={{
-                        width: 'clamp(12px, 1.5vw, 14px)',
-                        height: 'clamp(12px, 1.5vw, 14px)',
-                        cursor: 'pointer',
-                        accentColor: '#1E80D9',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span
-                      className="text-[#838486]"
-                      style={{
-                        fontSize: 'clamp(11px, 1.2vw, 13px)',
-                        textDecoration: item.is_done ? 'line-through' : 'none',
-                        opacity: item.is_done ? 0.6 : 1,
-                        cursor: 'pointer',
-                        lineHeight: '1.3',
-                      }}
                     >
-                      {item.content}
-                    </span>
-                  </div>
-                ))}
-                {items.length > 3 && (
-                  <div className="text-[#838486]" style={{ fontSize: 'clamp(10px, 1.1vw, 12px)', marginTop: '4px' }}>
-                    +{items.length - 3} еще
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                      <input
+                        type="checkbox"
+                        checked={item.is_done}
+                        onChange={() => {}}
+                        onClick={(e) => handleToggleChecklistItem(e, item)}
+                        style={{
+                          width: 'clamp(12px, 1.5vw, 14px)',
+                          height: 'clamp(12px, 1.5vw, 14px)',
+                          cursor: 'pointer',
+                          accentColor: '#1E80D9',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        className="text-[#838486]"
+                        style={{
+                          fontSize: 'clamp(11px, 1.2vw, 13px)',
+                          textDecoration: item.is_done ? 'line-through' : 'none',
+                          opacity: item.is_done ? 0.6 : 1,
+                          cursor: 'pointer',
+                          lineHeight: '1.3',
+                        }}
+                      >
+                        {item.content}
+                      </span>
+                    </div>
+                  ))}
+                  {items.length > 3 && (
+                    <div className="text-[#838486]" style={{ fontSize: 'clamp(10px, 1.1vw, 12px)', marginTop: '4px' }}>
+                      +{items.length - 3} еще
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {/* Разделитель после чеклистов */}
+          <div style={{ height: '1px', backgroundColor: '#404040', marginBottom: '12px' }} />
+        </>
       )}
 
-      {/* Разделитель */}
-      <div style={{ height: '1px', backgroundColor: '#404040', marginBottom: '12px' }} />
+      {/* Разделитель - только если нет чеклистов */}
+      {checklists.length === 0 && (
+        <div style={{ height: '1px', backgroundColor: '#404040', marginBottom: '12px' }} />
+      )}
 
       {/* Дедлайн */}
       {task.due_date && (
@@ -453,6 +459,8 @@ export default function KanbanBoard() {
         };
         const createdTask = await createTaskApi(projectId, taskPayload);
         taskId = createdTask.id;
+        // Обновляем modalTask на созданную задачу, чтобы можно было добавлять чеклисты
+        setModalTask(createdTask);
         // Перезагружаем задачи
         await reloadTasks();
       }
@@ -544,9 +552,17 @@ export default function KanbanBoard() {
         await reloadTasks();
       }
 
-      setIsModalOpen(false);
-      setModalTask(null);
-      setSelectedStatusId(null);
+      // Если задача была создана, оставляем модальное окно открытым для добавления чеклистов
+      // Если задача была обновлена, закрываем модальное окно
+      if (modalTask?.id) {
+        // Обновление существующей задачи - закрываем модальное окно
+        setIsModalOpen(false);
+        setModalTask(null);
+        setSelectedStatusId(null);
+      } else {
+        // Создание новой задачи - оставляем модальное окно открытым
+        // modalTask уже обновлен выше
+      }
     } catch (err) {
       const message =
         (isTaskApiError(err) && (err as ApiError).payload?.message) || 

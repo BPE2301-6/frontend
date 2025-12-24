@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, ChangeEvent, FormEvent } from 'react';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 import { Task, Status, TaskCreatePayload, User } from '@shared/api/types';
 import { checklistsApi, Checklist, ChecklistItem } from '@shared/api/checklists';
+import { ApiError } from '@shared/api/httpClient';
 
 const PRIORITY_COLOR: Record<string, string> = {
   HIGH: '#FD5353',
@@ -85,7 +86,8 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       return;
     }
 
-    if (task) {
+    // Загружаем чеклисты для существующей задачи
+    if (task?.id) {
       // Преобразуем ID тегов в названия для отображения
       const tagNames = Array.isArray(task.tag_ids) 
         ? task.tag_ids
@@ -123,7 +125,11 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
   }, [task, firstStatusId, isOpen, defaultStatusId, user, tags]);
 
   // Создание нового чеклиста
-  const handleCreateChecklist = async () => {
+  const handleCreateChecklist = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     if (!task?.id) return;
     try {
       const newChecklist = await checklistsApi.create(task.id);
@@ -131,22 +137,33 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
       setChecklistItems({ ...checklistItems, [newChecklist.id]: [] });
     } catch (error) {
       console.error('Ошибка создания чеклиста:', error);
-      alert('Не удалось создать чеклист');
+      const message = 
+        (error instanceof ApiError && error.payload?.message) ||
+        (error instanceof Error ? error.message : 'Не удалось создать чеклист');
+      alert(message);
     }
   };
 
   // Удаление чеклиста
-  const handleDeleteChecklist = async (checklistId: string) => {
+  const handleDeleteChecklist = async (e: React.MouseEvent, checklistId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
     if (!confirm('Удалить чеклист?')) return;
     try {
       await checklistsApi.delete(checklistId);
-      setChecklists(checklists.filter(c => c.id !== checklistId));
-      const newItems = { ...checklistItems };
-      delete newItems[checklistId];
-      setChecklistItems(newItems);
+      // Обновляем состояние после успешного удаления
+      setChecklists(prev => prev.filter(c => c.id !== checklistId));
+      setChecklistItems(prev => {
+        const newItems = { ...prev };
+        delete newItems[checklistId];
+        return newItems;
+      });
     } catch (error) {
       console.error('Ошибка удаления чеклиста:', error);
-      alert('Не удалось удалить чеклист');
+      const message = 
+        (error instanceof ApiError && error.payload?.message) ||
+        (error instanceof Error ? error.message : 'Не удалось удалить чеклист');
+      alert(message);
     }
   };
 
@@ -161,30 +178,41 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
         content,
         position: items.length,
       });
-      setChecklistItems({
-        ...checklistItems,
+      setChecklistItems(prev => ({
+        ...prev,
         [checklistId]: [...items, newItem],
-      });
-      setNewItemContent({ ...newItemContent, [checklistId]: '' });
+      }));
+      setNewItemContent(prev => ({ ...prev, [checklistId]: '' }));
     } catch (error) {
       console.error('Ошибка создания элемента чеклиста:', error);
-      alert('Не удалось создать элемент');
+      const message = 
+        (error instanceof ApiError && error.payload?.message) ||
+        (error instanceof Error ? error.message : 'Не удалось создать элемент');
+      alert(message);
     }
   };
 
 
   // Удаление элемента чеклиста
-  const handleDeleteItem = async (item: ChecklistItem) => {
+  const handleDeleteItem = async (e: React.MouseEvent, item: ChecklistItem) => {
+    e.stopPropagation();
+    e.preventDefault();
     try {
       await checklistsApi.deleteItem(item.id);
-      const items = checklistItems[item.checklist_id] || [];
-      setChecklistItems({
-        ...checklistItems,
-        [item.checklist_id]: items.filter(i => i.id !== item.id),
+      // Обновляем состояние после успешного удаления
+      setChecklistItems(prev => {
+        const items = prev[item.checklist_id] || [];
+        return {
+          ...prev,
+          [item.checklist_id]: items.filter(i => i.id !== item.id),
+        };
       });
     } catch (error) {
       console.error('Ошибка удаления элемента:', error);
-      alert('Не удалось удалить элемент');
+      const message = 
+        (error instanceof ApiError && error.payload?.message) ||
+        (error instanceof Error ? error.message : 'Не удалось удалить элемент');
+      alert(message);
     }
   };
 
@@ -460,25 +488,19 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
             </div>
           </div>
 
-          {/* Чеклисты */}
-          {task && (
+          {/* Чеклисты - показываем только для существующих задач */}
+          {task?.id && (
             <div className="mb-10" style={{ marginTop: 'clamp(20px, 2.5vw, 30px)' }}>
-              <div className="flex items-center justify-between mb-4">
-                <label
-                  className="block text-white font-medium"
-                  style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
-                >
-                  Чеклисты
-                </label>
+              <div className="flex justify-center mb-4">
                 <button
                   type="button"
                   onClick={handleCreateChecklist}
                   className="text-white font-medium"
                   style={{
-                    padding: 'clamp(6px, 0.8vw, 8px) clamp(12px, 1.5vw, 16px)',
-                    borderRadius: '10px',
+                    padding: 'clamp(10px, 1.2vw, 14px) clamp(20px, 2.5vw, 28px)',
+                    borderRadius: '15px',
                     backgroundColor: '#1E80D9',
-                    fontSize: 'clamp(12px, 1.5vw, 14px)',
+                    fontSize: 'clamp(14px, 1.8vw, 18px)',
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'background-color 0.3s ease',
@@ -526,7 +548,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleDeleteChecklist(checklist.id)}
+                            onClick={(e) => handleDeleteChecklist(e, checklist.id)}
                             className="text-[#FD5353] hover:text-[#FF0000] transition-colors"
                             style={{
                               fontSize: 'clamp(18px, 2.2vw, 22px)',
@@ -566,10 +588,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                               </span>
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteItem(item);
-                                }}
+                                onClick={(e) => handleDeleteItem(e, item)}
                                 className="text-[#838486] hover:text-[#FD5353] transition-colors"
                                 style={{
                                   fontSize: 'clamp(16px, 2vw, 18px)',
