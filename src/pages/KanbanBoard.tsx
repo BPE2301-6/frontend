@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import TaskModal from './TaskModal';
 import StatusModal from './StatusModal';
@@ -354,6 +354,9 @@ export default function KanbanBoard() {
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverStatusId, setDragOverStatusId] = useState<string | null>(null);
+  const [checklistRefreshKey, setChecklistRefreshKey] = useState(0); // Ключ для обновления чеклистов
+  const [scrollInfo, setScrollInfo] = useState({ currentIndex: 0, total: 0, scrollLeft: 0, scrollWidth: 0, clientWidth: 0 });
+  const columnsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!projectId) {
@@ -437,6 +440,61 @@ export default function KanbanBoard() {
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, projectId, setTaskFilters]);
+
+  // Отслеживание прокрутки колонок
+  useEffect(() => {
+    const container = columnsContainerRef.current;
+    if (!container) return;
+
+    const updateScrollInfo = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      const totalColumns = statuses.length;
+      
+      if (totalColumns === 0) {
+        setScrollInfo({ currentIndex: 0, total: 0, scrollLeft, scrollWidth, clientWidth });
+        return;
+      }
+
+      // Вычисляем текущую колонку на основе центра видимой области
+      const centerX = scrollLeft + clientWidth / 2;
+      
+      // Приблизительная ширина одной колонки (с учетом gap)
+      const gap = parseFloat(getComputedStyle(container).gap) || 30;
+      const columnWidth = (scrollWidth - (totalColumns - 1) * gap) / totalColumns;
+      
+      // Определяем, какая колонка находится в центре
+      let currentIndex = 0;
+      let accumulatedWidth = 0;
+      
+      for (let i = 0; i < totalColumns; i++) {
+        accumulatedWidth += columnWidth;
+        if (centerX <= accumulatedWidth + i * gap) {
+          currentIndex = i;
+          break;
+        }
+        if (i === totalColumns - 1) {
+          currentIndex = totalColumns - 1;
+        }
+      }
+      
+      setScrollInfo({
+        currentIndex: Math.max(0, Math.min(currentIndex, totalColumns - 1)),
+        total: totalColumns,
+        scrollLeft,
+        scrollWidth,
+        clientWidth,
+      });
+    };
+
+    updateScrollInfo();
+    container.addEventListener('scroll', updateScrollInfo);
+    window.addEventListener('resize', updateScrollInfo);
+
+    return () => {
+      container.removeEventListener('scroll', updateScrollInfo);
+      window.removeEventListener('resize', updateScrollInfo);
+    };
+  }, [statuses.length]);
 
   const handleSaveTask = async (payload: TaskCreatePayload, tagNames?: string) => {
     if (!projectId || !user) {
@@ -838,12 +896,15 @@ export default function KanbanBoard() {
 
       {/* Колонки - с отступом сверху для фиксированного header */}
       <div
+        ref={columnsContainerRef}
         className="flex items-start"
         style={{
           padding: 'clamp(40px, 5vw, 55px)',
           paddingTop: `calc(clamp(10px, 1.5vw, 15px) + clamp(120px, 15vh, 148px))`,
           gap: 'clamp(20px, 3vw, 30px)',
           minHeight: 'calc(100vh - clamp(120px, 15vh, 148px))',
+          overflowX: 'auto',
+          overflowY: 'visible',
         }}
       >
         {!loadingStatuses && statuses.length === 0 && (
@@ -970,7 +1031,7 @@ export default function KanbanBoard() {
                     onDragStart={setDraggedTaskId}
                     onDragEnd={() => setDraggedTaskId(null)}
                     isDragging={draggedTaskId === task.id}
-                    refreshKey={checklistRefreshKey}
+                    refreshKey={checklistRefreshKey ?? 0}
                   />
                 ))}
 
@@ -1076,6 +1137,58 @@ export default function KanbanBoard() {
         }}
       />
 
+      {/* Индикатор прокрутки колонок */}
+      {scrollInfo.total > 0 && scrollInfo.scrollWidth > scrollInfo.clientWidth && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 'clamp(20px, 2.5vw, 30px)',
+            right: 'clamp(20px, 2.5vw, 30px)',
+            backgroundColor: 'rgba(42, 45, 49, 0.95)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            border: '2px solid #1E80D9',
+            borderRadius: '15px',
+            padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
+            zIndex: 999,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'clamp(8px, 1vw, 12px)',
+            minWidth: 'clamp(120px, 15vw, 180px)',
+          }}
+        >
+          {/* Текст с текущей позицией */}
+          <div
+            className="text-white font-medium text-center"
+            style={{
+              fontSize: 'clamp(14px, 1.8vw, 18px)',
+            }}
+          >
+            Колонка {scrollInfo.currentIndex + 1} из {scrollInfo.total}
+          </div>
+          
+          {/* Визуальный индикатор прогресса */}
+          <div
+            style={{
+              width: '100%',
+              height: 'clamp(4px, 0.5vw, 6px)',
+              backgroundColor: '#404040',
+              borderRadius: '3px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: `${scrollInfo.scrollWidth > scrollInfo.clientWidth ? (scrollInfo.scrollLeft / (scrollInfo.scrollWidth - scrollInfo.clientWidth)) * 100 : 0}%`,
+                height: '100%',
+                backgroundColor: '#1E80D9',
+                borderRadius: '3px',
+                transition: 'width 0.1s ease',
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
