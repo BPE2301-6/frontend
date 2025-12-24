@@ -410,7 +410,6 @@ export default function KanbanBoard() {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverStatusId, setDragOverStatusId] = useState<string | null>(null);
   const [checklistRefreshKey, setChecklistRefreshKey] = useState(0); // Ключ для обновления чеклистов
-  const [scrollInfo, setScrollInfo] = useState({ currentIndex: 0, total: 0, scrollLeft: 0, scrollWidth: 0, clientWidth: 0 });
   const columnsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -497,59 +496,6 @@ export default function KanbanBoard() {
   }, [searchQuery, projectId, setTaskFilters]);
 
   // Отслеживание прокрутки колонок
-  useEffect(() => {
-    const container = columnsContainerRef.current;
-    if (!container) return;
-
-    const updateScrollInfo = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = container;
-      const totalColumns = statuses.length;
-      
-      if (totalColumns === 0) {
-        setScrollInfo({ currentIndex: 0, total: 0, scrollLeft, scrollWidth, clientWidth });
-        return;
-      }
-
-      // Вычисляем текущую колонку на основе центра видимой области
-      const centerX = scrollLeft + clientWidth / 2;
-      
-      // Приблизительная ширина одной колонки (с учетом gap)
-      const gap = parseFloat(getComputedStyle(container).gap) || 30;
-      const columnWidth = (scrollWidth - (totalColumns - 1) * gap) / totalColumns;
-      
-      // Определяем, какая колонка находится в центре
-      let currentIndex = 0;
-      let accumulatedWidth = 0;
-      
-      for (let i = 0; i < totalColumns; i++) {
-        accumulatedWidth += columnWidth;
-        if (centerX <= accumulatedWidth + i * gap) {
-          currentIndex = i;
-          break;
-        }
-        if (i === totalColumns - 1) {
-          currentIndex = totalColumns - 1;
-        }
-      }
-      
-      setScrollInfo({
-        currentIndex: Math.max(0, Math.min(currentIndex, totalColumns - 1)),
-        total: totalColumns,
-        scrollLeft,
-        scrollWidth,
-        clientWidth,
-      });
-    };
-
-    updateScrollInfo();
-    container.addEventListener('scroll', updateScrollInfo);
-    window.addEventListener('resize', updateScrollInfo);
-
-    return () => {
-      container.removeEventListener('scroll', updateScrollInfo);
-      window.removeEventListener('resize', updateScrollInfo);
-    };
-  }, [statuses.length]);
 
   const handleSaveTask = async (payload: TaskCreatePayload, tagNames?: string) => {
     if (!projectId || !user) {
@@ -1186,89 +1132,6 @@ export default function KanbanBoard() {
         }}
       />
 
-      {/* Индикатор прокрутки колонок */}
-      {scrollInfo.total > 0 && scrollInfo.scrollWidth > scrollInfo.clientWidth && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 'clamp(20px, 2.5vw, 30px)',
-            right: 'clamp(20px, 2.5vw, 30px)',
-            zIndex: 999,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'clamp(6px, 0.8vw, 10px)',
-            padding: 'clamp(8px, 1vw, 12px) clamp(12px, 1.5vw, 16px)',
-            border: '2px solid #FF8800',
-            borderRadius: '12px',
-            backgroundColor: 'transparent',
-          }}
-        >
-          {/* Вертикальные арки для каждой колонки */}
-          {Array.from({ length: scrollInfo.total }).map((_, index) => (
-            <div
-              key={index}
-              style={{
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-              }}
-            >
-              {/* Тонкие вертикальные линии выше и ниже */}
-              <div
-                style={{
-                  width: '1px',
-                  height: 'clamp(8px, 1vw, 12px)',
-                  backgroundColor: '#1E80D9',
-                  opacity: 0.3,
-                  marginBottom: 'clamp(2px, 0.3vw, 4px)',
-                }}
-              />
-              
-              {/* Вертикальная арка (колонка) */}
-              <div
-                style={{
-                  position: 'relative',
-                  width: 'clamp(8px, 1vw, 12px)',
-                  height: 'clamp(20px, 2.5vw, 28px)',
-                  border: '2px solid #1E80D9',
-                  borderBottom: 'none',
-                  borderTopLeftRadius: 'clamp(4px, 0.5vw, 6px)',
-                  borderTopRightRadius: 'clamp(4px, 0.5vw, 6px)',
-                  backgroundColor: 'transparent',
-                }}
-              >
-                {/* Затемнение для текущей колонки */}
-                {index === scrollInfo.currentIndex && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: 'rgba(42, 45, 49, 0.7)',
-                      borderTopLeftRadius: 'clamp(4px, 0.5vw, 6px)',
-                      borderTopRightRadius: 'clamp(4px, 0.5vw, 6px)',
-                    }}
-                  />
-                )}
-              </div>
-              
-              {/* Тонкие вертикальные линии выше и ниже */}
-              <div
-                style={{
-                  width: '1px',
-                  height: 'clamp(8px, 1vw, 12px)',
-                  backgroundColor: '#1E80D9',
-                  opacity: 0.3,
-                  marginTop: 'clamp(2px, 0.3vw, 4px)',
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
