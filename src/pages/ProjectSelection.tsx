@@ -390,7 +390,19 @@ export default function ProjectSelection() {
 
             {!loading && !error && projects.length > 0 && (
               <>
-                <div className="grid grid-cols-5 w-full" style={{ gap: 'clamp(16px, 2vw, 24px)', marginTop: 'clamp(24px, 3vw, 32px)', marginBottom: 'clamp(24px, 3vw, 32px)', padding: 'clamp(16px, 2vw, 24px)' }}>
+                <div 
+                  className="w-full"
+                  style={{ 
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(5, 1fr)',
+                    gap: 'clamp(20px, 2.5vw, 32px)',
+                    marginTop: 'clamp(24px, 3vw, 32px)',
+                    marginBottom: 'clamp(24px, 3vw, 32px)',
+                    padding: 'clamp(20px, 2.5vw, 32px)',
+                    maxWidth: '100%',
+                    direction: 'ltr',
+                  }}
+                >
                   {projects.map((project) => (
                     <button
                       key={project.id}
@@ -400,14 +412,15 @@ export default function ProjectSelection() {
                         transform: 'scale(1)',
                         border: '3px solid #1E80D9',
                         borderRadius: '16px',
-                        padding: 'clamp(12px, 1.5vw, 20px)',
+                        padding: 'clamp(12px, 1.5vw, 18px)',
                         width: '100%',
-                        minHeight: 'clamp(120px, 15vw, 160px)',
-                        maxHeight: 'clamp(120px, 15vw, 160px)',
+                        minHeight: 'clamp(100px, 12vw, 140px)',
+                        maxHeight: 'clamp(100px, 12vw, 140px)',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'flex-start',
                         overflow: 'hidden',
+                        maxWidth: '100%',
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.02)';
