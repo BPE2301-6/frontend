@@ -312,14 +312,16 @@ export default function ProjectSelection() {
                   placeholder="Поиск проектов..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200"
+                  className="flex-1 border-2 border-white text-white leading-tight placeholder:text-gray-400 placeholder:font-normal outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200"
                   style={{
                     height: 'clamp(70px, 8vw, 90px)',
                     borderRadius: '9999px',
-                    fontSize: 'clamp(28px, 3vw, 36px)',
+                    fontSize: 'clamp(14px, 1.8vw, 18px)',
                     paddingLeft: 'clamp(32px, 4vw, 48px)',
                     paddingRight: 'clamp(32px, 4vw, 48px)',
                     backgroundColor: '#2A2D31',
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
                 />
                 <button
@@ -595,15 +597,17 @@ export default function ProjectSelection() {
                 value={newProject.key}
                 onChange={(e) => setNewProject({ ...newProject, key: e.target.value })}
                 required
-                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
+                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-400 placeholder:font-normal outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
                 style={{
                   height: 'clamp(70px, 8vw, 90px)',
                   borderRadius: '9999px',
-                  fontSize: 'clamp(24px, 2.5vw, 32px)',
+                  fontSize: 'clamp(14px, 1.8vw, 18px)',
                   paddingLeft: 'clamp(32px, 4vw, 48px)',
                   paddingRight: 'clamp(32px, 4vw, 48px)',
                   backgroundColor: '#2A2D31',
                   marginBottom: '30px',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               />
 
@@ -614,7 +618,7 @@ export default function ProjectSelection() {
                 value={newProject.name}
                 onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
                 required
-                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
+                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-400 placeholder:font-normal outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
                 style={{
                   height: 'clamp(70px, 8vw, 90px)',
                   borderRadius: '9999px',
@@ -623,6 +627,8 @@ export default function ProjectSelection() {
                   paddingRight: 'clamp(32px, 4vw, 48px)',
                   backgroundColor: '#2A2D31',
                   marginBottom: '30px',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               />
 
@@ -632,7 +638,7 @@ export default function ProjectSelection() {
                 placeholder="Описание проекта (необязательно)"
                 value={newProject.description}
                 onChange={handleDescriptionChange}
-                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-300 placeholder:font-light outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
+                className="w-full border-2 border-white text-white leading-tight placeholder:text-gray-400 placeholder:font-normal outline-none focus:ring-4 focus:ring-[#1E80D9] focus:border-[#1E80D9] transition-all duration-200 create-project-input"
                 style={{
                   minHeight: 'clamp(100px, 12vw, 150px)',
                   maxHeight: '400px',
@@ -643,6 +649,8 @@ export default function ProjectSelection() {
                   marginBottom: '30px',
                   resize: 'none',
                   overflowY: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               />
 

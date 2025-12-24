@@ -18,15 +18,17 @@ body,
   padding: 0;
 }
 
-/* Large placeholder text for inputs */
-input::placeholder {
-  font-size: clamp(36px, 3.5vw, 44px) !important;
-  color: #D1D5DB;
+/* Unified placeholder text for inputs - same size as input text */
+input::placeholder,
+textarea::placeholder {
+  font-size: clamp(14px, 1.8vw, 18px) !important;
+  color: #9CA3AF;
   font-weight: 300;
 }
 
 input[type="email"]::placeholder,
 input[type="text"]::placeholder,
-input[type="password"]::placeholder {
-  font-size: clamp(36px, 3.5vw, 44px) !important;
+input[type="password"]::placeholder,
+input[type="search"]::placeholder {
+  font-size: clamp(14px, 1.8vw, 18px) !important;
 }

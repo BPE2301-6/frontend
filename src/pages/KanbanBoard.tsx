@@ -698,7 +698,7 @@ export default function KanbanBoard() {
                 placeholder="найти таску"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="text-white placeholder:text-white placeholder:font-medium outline-none"
+                className="text-white placeholder:text-gray-400 placeholder:font-normal outline-none"
                 style={{
                   width: 'clamp(500px, 35vw, 640px)',
                   height: 'clamp(50px, 6vw, 54px)',
@@ -707,7 +707,9 @@ export default function KanbanBoard() {
                   backgroundColor: '#242528',
                   paddingLeft: 'clamp(30px, 4vw, 40px)',
                   paddingRight: 'clamp(30px, 4vw, 40px)',
-                  fontSize: 'clamp(20px, 2.5vw, 24px)',
+                  fontSize: 'clamp(14px, 1.8vw, 18px)',
+                  display: 'flex',
+                  alignItems: 'center',
                 }}
               />
             </div>
