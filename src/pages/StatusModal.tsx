@@ -1,5 +1,6 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { StatusCreatePayload } from '@shared/api/types';
+import { ApiError } from '@shared/api/httpClient';
 
 interface StatusModalProps {
   isOpen: boolean;
@@ -46,7 +47,16 @@ export default function StatusModal({ isOpen, onClose, onSave, isSaving, default
       setName('');
       setError('');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Ошибка создания колонки';
+      let message = 'Ошибка создания колонки';
+      
+      if (error instanceof ApiError) {
+        message = error.payload?.message || error.message || message;
+      } else if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
+        message = 'Ошибка сети. Проверьте подключение к серверу и убедитесь, что бэкенд запущен на https://api.pp.qu1nqqy.ru';
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      
       setError(message);
     }
   };
