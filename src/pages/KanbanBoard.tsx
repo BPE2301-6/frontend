@@ -321,7 +321,7 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
             })}
           </div>
           {/* Разделитель после чеклистов */}
-          <div style={{ height: '1px', backgroundColor: '#404040', marginBottom: '12px' }} />
+      <div style={{ height: '1px', backgroundColor: '#404040', marginBottom: '12px' }} />
         </>
       )}
 
@@ -670,9 +670,9 @@ export default function KanbanBoard() {
       // Если задача была обновлена, закрываем модальное окно
       if (modalTask?.id) {
         // Обновление существующей задачи - закрываем модальное окно
-        setIsModalOpen(false);
-        setModalTask(null);
-        setSelectedStatusId(null);
+      setIsModalOpen(false);
+      setModalTask(null);
+      setSelectedStatusId(null);
         // Обновляем ключ для обновления чеклистов в карточках задач
         setChecklistRefreshKey(prev => prev + 1);
       } else {
@@ -1193,49 +1193,80 @@ export default function KanbanBoard() {
             position: 'fixed',
             bottom: 'clamp(20px, 2.5vw, 30px)',
             right: 'clamp(20px, 2.5vw, 30px)',
-            backgroundColor: 'rgba(42, 45, 49, 0.95)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            border: '2px solid #1E80D9',
-            borderRadius: '15px',
-            padding: 'clamp(12px, 1.5vw, 16px) clamp(16px, 2vw, 20px)',
             zIndex: 999,
             display: 'flex',
-            flexDirection: 'column',
-            gap: 'clamp(8px, 1vw, 12px)',
-            minWidth: 'clamp(120px, 15vw, 180px)',
+            alignItems: 'center',
+            gap: 'clamp(6px, 0.8vw, 10px)',
+            padding: 'clamp(8px, 1vw, 12px) clamp(12px, 1.5vw, 16px)',
+            border: '2px solid #FF8800',
+            borderRadius: '12px',
+            backgroundColor: 'transparent',
           }}
         >
-          {/* Текст с текущей позицией */}
-          <div
-            className="text-white font-medium text-center"
-            style={{
-              fontSize: 'clamp(14px, 1.8vw, 18px)',
-            }}
-          >
-            Колонка {scrollInfo.currentIndex + 1} из {scrollInfo.total}
-          </div>
-          
-          {/* Визуальный индикатор прогресса */}
-          <div
-            style={{
-              width: '100%',
-              height: 'clamp(4px, 0.5vw, 6px)',
-              backgroundColor: '#404040',
-              borderRadius: '3px',
-              overflow: 'hidden',
-            }}
-          >
+          {/* Вертикальные арки для каждой колонки */}
+          {Array.from({ length: scrollInfo.total }).map((_, index) => (
             <div
+              key={index}
               style={{
-                width: `${scrollInfo.scrollWidth > scrollInfo.clientWidth ? (scrollInfo.scrollLeft / (scrollInfo.scrollWidth - scrollInfo.clientWidth)) * 100 : 0}%`,
-                height: '100%',
-                backgroundColor: '#1E80D9',
-                borderRadius: '3px',
-                transition: 'width 0.1s ease',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
               }}
-            />
-          </div>
+            >
+              {/* Тонкие вертикальные линии выше и ниже */}
+              <div
+                style={{
+                  width: '1px',
+                  height: 'clamp(8px, 1vw, 12px)',
+                  backgroundColor: '#1E80D9',
+                  opacity: 0.3,
+                  marginBottom: 'clamp(2px, 0.3vw, 4px)',
+                }}
+              />
+              
+              {/* Вертикальная арка (колонка) */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: 'clamp(8px, 1vw, 12px)',
+                  height: 'clamp(20px, 2.5vw, 28px)',
+                  border: '2px solid #1E80D9',
+                  borderBottom: 'none',
+                  borderTopLeftRadius: 'clamp(4px, 0.5vw, 6px)',
+                  borderTopRightRadius: 'clamp(4px, 0.5vw, 6px)',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                {/* Затемнение для текущей колонки */}
+                {index === scrollInfo.currentIndex && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(42, 45, 49, 0.7)',
+                      borderTopLeftRadius: 'clamp(4px, 0.5vw, 6px)',
+                      borderTopRightRadius: 'clamp(4px, 0.5vw, 6px)',
+                    }}
+                  />
+                )}
+              </div>
+              
+              {/* Тонкие вертикальные линии выше и ниже */}
+              <div
+                style={{
+                  width: '1px',
+                  height: 'clamp(8px, 1vw, 12px)',
+                  backgroundColor: '#1E80D9',
+                  opacity: 0.3,
+                  marginTop: 'clamp(2px, 0.3vw, 4px)',
+                }}
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>
