@@ -169,7 +169,10 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
   };
 
   // Создание элемента чеклиста
-  const handleCreateItem = async (checklistId: string) => {
+  const handleCreateItem = async (e: React.MouseEvent | React.KeyboardEvent, checklistId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
     const content = newItemContent[checklistId]?.trim();
     if (!content || !task?.id) return;
     
@@ -222,6 +225,14 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    event.stopPropagation();
+    
+    // Проверяем, не был ли submit вызван из поля ввода элемента чеклиста
+    const target = event.target as HTMLElement;
+    if (target.closest('.checklist-item-input')) {
+      return;
+    }
+    
     const statusId = form.status_id || firstStatusId;
     if (!statusId) {
       alert('Выберите колонку (статус) для задачи');
@@ -632,7 +643,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                         <div className="flex items-center" style={{ gap: 'clamp(12px, 1.5vw, 16px)' }}>
                           <input
                             type="text"
-                            className="text-white placeholder:text-gray-400 outline-none"
+                            className="text-white placeholder:text-gray-400 outline-none checklist-item-input"
                             style={{
                               backgroundColor: '#242528',
                               borderRadius: '8px',
@@ -647,20 +658,26 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                             placeholder="Добавить элемент..."
                             value={newItemContent[checklist.id] || ''}
                             onChange={(e) => {
+                              e.stopPropagation();
                               setNewItemContent(prev => ({
                                 ...prev,
                                 [checklist.id]: e.target.value,
                               }));
                             }}
-                            onKeyPress={(e) => {
+                            onKeyDown={(e) => {
                               if (e.key === 'Enter') {
-                                handleCreateItem(checklist.id);
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCreateItem(e, checklist.id);
                               }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
                             }}
                           />
                           <button
                             type="button"
-                            onClick={() => handleCreateItem(checklist.id)}
+                            onClick={(e) => handleCreateItem(e, checklist.id)}
                             className="text-white font-medium flex-shrink-0"
                             style={{
                               padding: 'clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 20px)',
