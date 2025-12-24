@@ -176,10 +176,17 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
     const content = newItemContent[checklistId]?.trim();
     if (!content || !task?.id) return;
     
+    // Проверяем ограничение в 6 элементов
+    const currentItems = checklistItems[checklistId] || [];
+    if (currentItems.length >= 6) {
+      alert('Максимальное количество элементов в чеклисте - 6');
+      return;
+    }
+    
     try {
       await checklistsApi.createItem(checklistId, {
         content,
-        position: (checklistItems[checklistId] || []).length,
+        position: currentItems.length,
       });
       // Перезагружаем чеклисты для обновления состояния
       await loadChecklists(task.id);
@@ -639,68 +646,76 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                           ))}
                         </div>
 
-                        {/* Поле для добавления нового элемента */}
-                        <div className="flex items-center" style={{ gap: 'clamp(12px, 1.5vw, 16px)' }}>
-                          <input
-                            type="text"
-                            className="text-white placeholder:text-gray-400 outline-none checklist-item-input"
-                            style={{
-                              backgroundColor: '#242528',
-                              borderRadius: '8px',
-                              padding: 'clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 20px)',
-                              fontSize: 'clamp(14px, 1.8vw, 16px)',
-                              border: '1px solid #404040',
-                              flex: '1',
-                              minWidth: 0,
-                              height: 'clamp(40px, 5vw, 48px)',
-                              boxSizing: 'border-box',
-                            }}
-                            placeholder="Добавить элемент..."
-                            value={newItemContent[checklist.id] || ''}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              setNewItemContent(prev => ({
-                                ...prev,
-                                [checklist.id]: e.target.value,
-                              }));
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
+                        {/* Поле для добавления нового элемента - показываем только если меньше 6 элементов */}
+                        {(checklistItems[checklist.id] || []).length < 6 && (
+                          <div className="flex items-center" style={{ gap: 'clamp(12px, 1.5vw, 16px)' }}>
+                            <input
+                              type="text"
+                              className="text-white placeholder:text-gray-400 outline-none checklist-item-input"
+                              style={{
+                                backgroundColor: '#242528',
+                                borderRadius: '8px',
+                                padding: 'clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 20px)',
+                                fontSize: 'clamp(14px, 1.8vw, 16px)',
+                                border: '1px solid #404040',
+                                flex: '1',
+                                minWidth: 0,
+                                height: 'clamp(40px, 5vw, 48px)',
+                                boxSizing: 'border-box',
+                              }}
+                              placeholder="Добавить элемент..."
+                              value={newItemContent[checklist.id] || ''}
+                              onChange={(e) => {
                                 e.stopPropagation();
-                                handleCreateItem(e, checklist.id);
-                              }
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                          />
-                          <button
-                            type="button"
-                            onClick={(e) => handleCreateItem(e, checklist.id)}
-                            className="text-white font-medium flex-shrink-0"
-                            style={{
-                              padding: 'clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 20px)',
-                              borderRadius: '8px',
-                              backgroundColor: '#1E80D9',
-                              fontSize: 'clamp(14px, 1.8vw, 16px)',
-                              border: 'none',
-                              cursor: 'pointer',
-                              transition: 'background-color 0.3s ease',
-                              height: 'clamp(40px, 5vw, 48px)',
-                              minWidth: 'clamp(100px, 12vw, 140px)',
-                              boxSizing: 'border-box',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#166BB7';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#1E80D9';
-                            }}
-                          >
-                            Добавить
-                          </button>
-                        </div>
+                                setNewItemContent(prev => ({
+                                  ...prev,
+                                  [checklist.id]: e.target.value,
+                                }));
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleCreateItem(e, checklist.id);
+                                }
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => handleCreateItem(e, checklist.id)}
+                              className="text-white font-medium flex-shrink-0"
+                              style={{
+                                padding: 'clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 20px)',
+                                borderRadius: '8px',
+                                backgroundColor: '#1E80D9',
+                                fontSize: 'clamp(14px, 1.8vw, 16px)',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'background-color 0.3s ease',
+                                height: 'clamp(40px, 5vw, 48px)',
+                                minWidth: 'clamp(100px, 12vw, 140px)',
+                                boxSizing: 'border-box',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#166BB7';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#1E80D9';
+                              }}
+                            >
+                              Добавить
+                            </button>
+                          </div>
+                        )}
+                        {/* Сообщение о достижении лимита */}
+                        {(checklistItems[checklist.id] || []).length >= 6 && (
+                          <div className="text-[#838486] text-center" style={{ fontSize: 'clamp(12px, 1.5vw, 14px)', marginTop: 'clamp(8px, 1vw, 12px)' }}>
+                            Достигнут лимит в 6 элементов
+                          </div>
+                        )}
                       </div>
                     );
                   })}

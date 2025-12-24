@@ -286,7 +286,7 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
               
               return (
                 <div key={checklist.id} style={{ marginBottom: 'clamp(6px, 0.8vw, 8px)' }}>
-                  {items.slice(0, 3).map((item) => (
+                  {items.slice(0, 6).map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center"
@@ -311,9 +311,9 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
                       </span>
                     </div>
                   ))}
-                  {items.length > 3 && (
+                  {items.length > 6 && (
                     <div className="text-[#838486]" style={{ fontSize: 'clamp(10px, 1.1vw, 12px)', marginTop: '4px' }}>
-                      +{items.length - 3} еще
+                      +{items.length - 6} еще
                     </div>
                   )}
                 </div>
