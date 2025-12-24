@@ -565,7 +565,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                         </div>
 
                         {/* Элементы чеклиста - только отображение и удаление, без отметки */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1vw, 10px)', marginBottom: 'clamp(8px, 1vw, 10px)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1vw, 10px)', marginBottom: 'clamp(12px, 1.5vw, 16px)' }}>
                           {items.map((item) => (
                             <div
                               key={item.id}
@@ -582,6 +582,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                                   fontSize: 'clamp(14px, 1.8vw, 16px)',
                                   textDecoration: item.is_done ? 'line-through' : 'none',
                                   opacity: item.is_done ? 0.6 : 1,
+                                  transition: 'text-decoration 0.2s ease, opacity 0.2s ease',
                                 }}
                               >
                                 {item.content}
@@ -607,24 +608,28 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                         </div>
 
                         {/* Поле для добавления нового элемента */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center" style={{ gap: 'clamp(12px, 1.5vw, 16px)' }}>
                           <input
                             type="text"
-                            className="flex-1 text-white placeholder:text-gray-400 outline-none"
+                            className="text-white placeholder:text-gray-400 outline-none"
                             style={{
                               backgroundColor: '#242528',
                               borderRadius: '8px',
-                              padding: 'clamp(8px, 1vw, 10px)',
+                              padding: 'clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 20px)',
                               fontSize: 'clamp(14px, 1.8vw, 16px)',
                               border: '1px solid #404040',
+                              flex: '1',
+                              minWidth: 0,
+                              height: 'clamp(40px, 5vw, 48px)',
+                              boxSizing: 'border-box',
                             }}
                             placeholder="Добавить элемент..."
                             value={newItemContent[checklist.id] || ''}
                             onChange={(e) => {
-                              setNewItemContent({
-                                ...newItemContent,
+                              setNewItemContent(prev => ({
+                                ...prev,
                                 [checklist.id]: e.target.value,
-                              });
+                              }));
                             }}
                             onKeyPress={(e) => {
                               if (e.key === 'Enter') {
@@ -635,15 +640,18 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                           <button
                             type="button"
                             onClick={() => handleCreateItem(checklist.id)}
-                            className="text-white font-medium"
+                            className="text-white font-medium flex-shrink-0"
                             style={{
-                              padding: 'clamp(8px, 1vw, 10px) clamp(12px, 1.5vw, 16px)',
+                              padding: 'clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 20px)',
                               borderRadius: '8px',
                               backgroundColor: '#1E80D9',
-                              fontSize: 'clamp(12px, 1.5vw, 14px)',
+                              fontSize: 'clamp(14px, 1.8vw, 16px)',
                               border: 'none',
                               cursor: 'pointer',
                               transition: 'background-color 0.3s ease',
+                              height: 'clamp(40px, 5vw, 48px)',
+                              minWidth: 'clamp(100px, 12vw, 140px)',
+                              boxSizing: 'border-box',
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor = '#166BB7';
