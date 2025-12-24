@@ -104,8 +104,69 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
       }
     };
     
-    loadChecklists();
+    if (task.id) {
+      loadChecklists();
+    }
   }, [task.id, refreshKey]); // Добавляем refreshKey для обновления после изменений
+
+  // Периодическая проверка обновлений чеклистов (каждые 1.5 секунды)
+  useEffect(() => {
+    if (!task.id) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const loadedChecklists = await checklistsApi.list(task.id);
+        
+        // Загружаем все элементы чеклистов
+        const itemsMap: Record<string, ChecklistItem[]> = {};
+        for (const checklist of loadedChecklists) {
+          const items = await checklistsApi.getItems(checklist.id);
+          itemsMap[checklist.id] = items;
+        }
+        
+        // Обновляем состояние только если есть изменения
+        setChecklists(prev => {
+          const prevIds = prev.map(c => c.id).sort().join(',');
+          const newIds = loadedChecklists.map(c => c.id).sort().join(',');
+          if (prevIds !== newIds || prev.length !== loadedChecklists.length) {
+            return loadedChecklists;
+          }
+          return prev;
+        });
+        
+        setChecklistItems(prev => {
+          let hasChanges = false;
+          const newItems: Record<string, ChecklistItem[]> = {};
+          
+          for (const checklist of loadedChecklists) {
+            const prevItems = prev[checklist.id] || [];
+            const newItemsList = itemsMap[checklist.id] || [];
+            
+            // Проверяем изменения
+            if (prevItems.length !== newItemsList.length ||
+                prevItems.some((item, idx) => {
+                  const newItem = newItemsList[idx];
+                  return !newItem || item.id !== newItem.id || item.is_done !== newItem.is_done || item.content !== newItem.content;
+                })) {
+              hasChanges = true;
+            }
+            
+            newItems[checklist.id] = newItemsList;
+          }
+          
+          // Обновляем только если есть изменения
+          if (hasChanges || Object.keys(prev).length !== Object.keys(newItems).length) {
+            return newItems;
+          }
+          return prev;
+        });
+      } catch (error) {
+        // Игнорируем ошибки
+      }
+    }, 1500); // Проверка каждые 1.5 секунды
+    
+    return () => clearInterval(interval);
+  }, [task.id]);
   
   // Переключение состояния элемента чеклиста
   const handleToggleChecklistItem = async (e: React.MouseEvent, item: ChecklistItem) => {
@@ -210,6 +271,11 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
         </div>
       )}
 
+      {/* Разделитель перед чеклистами */}
+      {checklists.length > 0 && (
+        <div style={{ height: '1px', backgroundColor: '#404040', marginTop: 'clamp(8px, 1vw, 12px)', marginBottom: 'clamp(8px, 1vw, 12px)' }} />
+      )}
+
       {/* Чеклисты - между описанием и датой */}
       {checklists.length > 0 && (
         <>
@@ -223,25 +289,13 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
                   {items.slice(0, 3).map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-2"
+                      className="flex items-center"
                       style={{
                         marginBottom: 'clamp(4px, 0.5vw, 6px)',
+                        cursor: 'pointer',
                       }}
                       onClick={(e) => handleToggleChecklistItem(e, item)}
                     >
-                      <input
-                        type="checkbox"
-                        checked={item.is_done}
-                        onChange={() => {}}
-                        onClick={(e) => handleToggleChecklistItem(e, item)}
-                        style={{
-                          width: 'clamp(12px, 1.5vw, 14px)',
-                          height: 'clamp(12px, 1.5vw, 14px)',
-                          cursor: 'pointer',
-                          accentColor: '#1E80D9',
-                          flexShrink: 0,
-                        }}
-                      />
                       <span
                         className="text-[#838486]"
                         style={{
@@ -250,6 +304,7 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
                           opacity: item.is_done ? 0.6 : 1,
                           cursor: 'pointer',
                           lineHeight: '1.3',
+                          transition: 'text-decoration 0.2s ease, opacity 0.2s ease',
                         }}
                       >
                         {item.content}
