@@ -43,15 +43,8 @@ const buildUrl = (path: string, query?: QueryParams): string => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
   
-  // Используем относительный URL если base это localhost или абсолютный URL
-  let fullUrl: string;
-  try {
-    const url = new URL(normalizedPath, base);
-    fullUrl = url.toString();
-  } catch (error) {
-    // Если не удалось создать URL (например, относительный путь), используем конкатенацию
-    fullUrl = `${base}${normalizedPath}`;
-  }
+  // Формируем полный URL - всегда используем простую конкатенацию для избежания проблем с new URL()
+  let fullUrl = `${base}${normalizedPath}`;
 
   if (query) {
     const urlObj = new URL(fullUrl);
@@ -108,7 +101,9 @@ export async function httpRequest<T = unknown>(
   const url = buildUrl(path, query);
   console.log('API Request:', { 
     method, 
+    path,
     url, 
+    baseUrl: API_BASE_URL,
     headers: { ...headers, Authorization: token ? `Bearer ${token.substring(0, 20)}...` : 'none' }, 
     body: body ? JSON.stringify(body) : undefined
   });
