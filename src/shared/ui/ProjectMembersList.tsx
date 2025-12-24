@@ -41,7 +41,7 @@ export default function ProjectMembersList({
             width: 'clamp(40px, 5vw, 50px)',
             height: 'clamp(40px, 5vw, 50px)',
             borderRadius: '50%',
-            backgroundColor: '#1E80D9',
+            backgroundColor: '#FF8800',
             fontSize: 'clamp(20px, 2.5vw, 24px)',
             lineHeight: '1',
             border: 'none',
@@ -52,11 +52,11 @@ export default function ProjectMembersList({
             aspectRatio: '1 / 1',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#166BB7';
+            e.currentTarget.style.backgroundColor = '#E67700';
             e.currentTarget.style.transform = 'scale(1.1)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#1E80D9';
+            e.currentTarget.style.backgroundColor = '#FF8800';
             e.currentTarget.style.transform = 'scale(1)';
           }}
           title="Добавить участника"
@@ -179,7 +179,7 @@ export default function ProjectMembersList({
               width: 'clamp(40px, 5vw, 50px)',
               height: 'clamp(40px, 5vw, 50px)',
               borderRadius: '50%',
-              backgroundColor: '#1E80D9',
+              backgroundColor: '#FF8800',
               fontSize: 'clamp(20px, 2.5vw, 24px)',
               lineHeight: '1',
               border: '2px solid #242528',
@@ -190,11 +190,11 @@ export default function ProjectMembersList({
               aspectRatio: '1 / 1',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#166BB7';
+              e.currentTarget.style.backgroundColor = '#E67700';
               e.currentTarget.style.transform = 'scale(1.1)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#1E80D9';
+              e.currentTarget.style.backgroundColor = '#FF8800';
               e.currentTarget.style.transform = 'scale(1)';
             }}
             title="Добавить участника"

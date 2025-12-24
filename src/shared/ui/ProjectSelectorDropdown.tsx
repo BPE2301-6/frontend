@@ -232,11 +232,12 @@ export default function ProjectSelectorDropdown({
       {/* Выпадающее меню */}
       {isOpen && (
         <div
-          className="bg-[#2A2D31] border border-[#404040]"
+          className="border border-[#404040]"
           style={{
             position: 'absolute',
             top: 'calc(100% + 8px)',
-            left: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
             minWidth: '280px',
             maxWidth: '400px',
             borderRadius: '15px',
@@ -247,6 +248,9 @@ export default function ProjectSelectorDropdown({
             overflowY: 'auto',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
+            backgroundColor: 'rgba(42, 45, 49, 0.95)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
           }}
         >
           <style>{`
@@ -322,6 +326,9 @@ export default function ProjectSelectorDropdown({
                     borderRadius: '10px',
                     backgroundColor: proj.id === currentProjectId ? '#313236' : 'transparent',
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                   }}
                   onMouseEnter={(e) => {
                     if (proj.id !== currentProjectId) {
@@ -337,6 +344,19 @@ export default function ProjectSelectorDropdown({
                   <div className="text-white font-medium" style={{ fontSize: 'clamp(14px, 1.8vw, 16px)' }}>
                     {proj.name.toLowerCase()}
                   </div>
+                  {proj.userRole === 'OWNER' && (
+                    <span
+                      style={{
+                        color: '#FF8800',
+                        fontSize: 'clamp(16px, 2vw, 18px)',
+                        marginLeft: '8px',
+                        flexShrink: 0,
+                      }}
+                      title="Владелец"
+                    >
+                      ★
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
