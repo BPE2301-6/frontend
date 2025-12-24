@@ -6,7 +6,7 @@ import UserProfileModal from '@shared/ui/UserProfileModal';
 import ConfirmDeleteModal from '@shared/ui/ConfirmDeleteModal';
 import AddMemberModal from '@shared/ui/AddMemberModal';
 import ProjectMembersList from '@shared/ui/ProjectMembersList';
-import ProjectSelectorModal from '@shared/ui/ProjectSelectorModal';
+import ProjectSelectorDropdown from '@shared/ui/ProjectSelectorDropdown';
 import { useStatuses } from '@entities/statuses/useStatuses';
 import { useTasks } from '@entities/tasks/useTasks';
 import { useAuthStore } from '@entities/auth/useAuthStore';
@@ -246,7 +246,6 @@ export default function KanbanBoard() {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-  const [showProjectSelectorModal, setShowProjectSelectorModal] = useState(false);
   const [deleteStatusId, setDeleteStatusId] = useState<string | null>(null);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -565,7 +564,7 @@ export default function KanbanBoard() {
       >
         <div className="flex items-center justify-between h-full">
           {/* Левая часть: название доски и поиск */}
-          <div className="flex items-center" style={{ gap: 'clamp(12px, 2vw, 20px)' }}>
+          <div className="flex items-center" style={{ gap: 'clamp(6px, 0.8vw, 10px)' }}>
             {/* Название доски */}
             <div
               className="font-bold text-white"
@@ -598,7 +597,7 @@ export default function KanbanBoard() {
             </div>
           </div>
 
-          {/* Правая часть: кнопка добавления колонки, плюсик и аватар */}
+          {/* Правая часть: кнопка добавления колонки, участники, выбор проекта и аватар */}
           <div className="flex items-center" style={{ gap: 'clamp(8px, 1.5vw, 16px)', marginLeft: 'clamp(16px, 2vw, 24px)' }}>
             {/* Кнопка добавления колонки */}
             <button
@@ -623,33 +622,6 @@ export default function KanbanBoard() {
               Добавить колонку
             </button>
 
-            {/* Кнопка добавления задачи */}
-            <button
-              onClick={() => handleOpenModal(null, null)}
-              className="flex items-center justify-center text-white font-bold"
-              style={{
-                width: 'clamp(50px, 6vw, 54px)',
-                height: 'clamp(50px, 6vw, 54px)',
-                borderRadius: '50%',
-                backgroundColor: '#FF8800',
-                fontSize: 'clamp(35px, 4.5vw, 45px)',
-                lineHeight: '1',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s ease, transform 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#E67700';
-                e.currentTarget.style.transform = 'scale(1.05)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#FF8800';
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-            >
-              +
-            </button>
-
             {/* Участники проекта */}
             <ProjectMembersList
               members={projectMembers}
@@ -659,36 +631,15 @@ export default function KanbanBoard() {
               onAddMember={() => setShowAddMemberModal(true)}
             />
 
-            {/* Кнопка переключения проектов */}
-            <button
-              onClick={() => setShowProjectSelectorModal(true)}
-              className="flex items-center justify-center text-white font-bold"
-              style={{
-                width: 'clamp(40px, 5vw, 50px)',
-                height: 'clamp(40px, 5vw, 50px)',
-                borderRadius: '50%',
-                backgroundColor: '#1E80D9',
-                fontSize: 'clamp(20px, 2.5vw, 24px)',
-                lineHeight: '1',
-                border: '2px solid #242528',
-                cursor: 'pointer',
-                marginLeft: 'clamp(12px, 2vw, 20px)',
-                transition: 'background-color 0.3s ease, transform 0.3s ease',
-                flexShrink: 0,
-                aspectRatio: '1 / 1',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#166BB7';
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#1E80D9';
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-              title="Переключить проект"
-            >
-              ⚙
-            </button>
+            {/* Выпадающий список проектов */}
+            {project && (
+              <div style={{ marginLeft: 'clamp(12px, 2vw, 20px)' }}>
+                <ProjectSelectorDropdown
+                  currentProjectId={projectId}
+                  currentProjectName={project.name}
+                />
+              </div>
+            )}
 
             {/* Аватар пользователя с ролью - круглый, в правом углу */}
             {user && (
@@ -1010,11 +961,6 @@ export default function KanbanBoard() {
         }}
       />
 
-      <ProjectSelectorModal
-        isOpen={showProjectSelectorModal}
-        onClose={() => setShowProjectSelectorModal(false)}
-        currentProjectId={projectId}
-      />
     </div>
   );
 }

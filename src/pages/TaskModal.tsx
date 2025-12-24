@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, ChangeEvent, FormEvent } from 'react';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 import { Task, Status, TaskCreatePayload, User } from '@shared/api/types';
+import { checklistsApi, Checklist, ChecklistItem } from '@shared/api/checklists';
 
 const PRIORITY_COLOR: Record<string, string> = {
   HIGH: '#FD5353',
@@ -44,6 +45,10 @@ interface TaskModalProps {
 
 export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task, isSaving, defaultStatusId, projectMembers = [], tags = [] }: TaskModalProps) {
   const [form, setForm] = useState<TaskForm>(defaultForm);
+  const [checklists, setChecklists] = useState<Checklist[]>([]);
+  const [checklistItems, setChecklistItems] = useState<Record<string, ChecklistItem[]>>({});
+  const [loadingChecklists, setLoadingChecklists] = useState(false);
+  const [newItemContent, setNewItemContent] = useState<Record<string, string>>({});
   const { user } = useAuthStore();
 
   const firstStatusId = useMemo(
@@ -51,8 +56,34 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
     [statuses]
   );
 
+  // Загрузка чеклистов для задачи
+  const loadChecklists = async (taskId: string) => {
+    setLoadingChecklists(true);
+    try {
+      const loadedChecklists = await checklistsApi.list(taskId);
+      setChecklists(loadedChecklists);
+      
+      // Загружаем элементы для каждого чеклиста
+      const itemsMap: Record<string, ChecklistItem[]> = {};
+      for (const checklist of loadedChecklists) {
+        const items = await checklistsApi.getItems(checklist.id);
+        itemsMap[checklist.id] = items;
+      }
+      setChecklistItems(itemsMap);
+    } catch (error) {
+      console.error('Ошибка загрузки чеклистов:', error);
+    } finally {
+      setLoadingChecklists(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setChecklists([]);
+      setChecklistItems({});
+      setNewItemContent({});
+      return;
+    }
 
     if (task) {
       // Преобразуем ID тегов в названия для отображения
@@ -76,6 +107,9 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
         due_date: task.due_date ? task.due_date.slice(0, 10) : '',
         tag_ids: tagNames,
       });
+
+      // Загружаем чеклисты для существующей задачи
+      loadChecklists(task.id);
     } else {
       const statusId = defaultStatusId || firstStatusId;
       setForm({ 
@@ -83,8 +117,91 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
         status_id: statusId,
         reporter_id: user?.id || '',
       });
+      setChecklists([]);
+      setChecklistItems({});
     }
   }, [task, firstStatusId, isOpen, defaultStatusId, user, tags]);
+
+  // Создание нового чеклиста
+  const handleCreateChecklist = async () => {
+    if (!task?.id) return;
+    try {
+      const newChecklist = await checklistsApi.create(task.id);
+      setChecklists([...checklists, newChecklist]);
+      setChecklistItems({ ...checklistItems, [newChecklist.id]: [] });
+    } catch (error) {
+      console.error('Ошибка создания чеклиста:', error);
+      alert('Не удалось создать чеклист');
+    }
+  };
+
+  // Удаление чеклиста
+  const handleDeleteChecklist = async (checklistId: string) => {
+    if (!confirm('Удалить чеклист?')) return;
+    try {
+      await checklistsApi.delete(checklistId);
+      setChecklists(checklists.filter(c => c.id !== checklistId));
+      const newItems = { ...checklistItems };
+      delete newItems[checklistId];
+      setChecklistItems(newItems);
+    } catch (error) {
+      console.error('Ошибка удаления чеклиста:', error);
+      alert('Не удалось удалить чеклист');
+    }
+  };
+
+  // Создание элемента чеклиста
+  const handleCreateItem = async (checklistId: string) => {
+    const content = newItemContent[checklistId]?.trim();
+    if (!content) return;
+    
+    try {
+      const items = checklistItems[checklistId] || [];
+      const newItem = await checklistsApi.createItem(checklistId, {
+        content,
+        position: items.length,
+      });
+      setChecklistItems({
+        ...checklistItems,
+        [checklistId]: [...items, newItem],
+      });
+      setNewItemContent({ ...newItemContent, [checklistId]: '' });
+    } catch (error) {
+      console.error('Ошибка создания элемента чеклиста:', error);
+      alert('Не удалось создать элемент');
+    }
+  };
+
+  // Обновление элемента чеклиста (переключение is_done)
+  const handleToggleItem = async (item: ChecklistItem) => {
+    try {
+      const updatedItem = await checklistsApi.updateItem(item.id, {
+        is_done: !item.is_done,
+      });
+      const items = checklistItems[item.checklist_id] || [];
+      setChecklistItems({
+        ...checklistItems,
+        [item.checklist_id]: items.map(i => i.id === item.id ? updatedItem : i),
+      });
+    } catch (error) {
+      console.error('Ошибка обновления элемента:', error);
+    }
+  };
+
+  // Удаление элемента чеклиста
+  const handleDeleteItem = async (item: ChecklistItem) => {
+    try {
+      await checklistsApi.deleteItem(item.id);
+      const items = checklistItems[item.checklist_id] || [];
+      setChecklistItems({
+        ...checklistItems,
+        [item.checklist_id]: items.filter(i => i.id !== item.id),
+      });
+    } catch (error) {
+      console.error('Ошибка удаления элемента:', error);
+      alert('Не удалось удалить элемент');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -357,6 +474,196 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
               />
             </div>
           </div>
+
+          {/* Чеклисты - только для существующих задач */}
+          {task && (
+            <div className="mb-10">
+              <div className="flex items-center justify-between mb-4">
+                <label
+                  className="block text-white font-medium"
+                  style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+                >
+                  Чеклисты
+                </label>
+                <button
+                  type="button"
+                  onClick={handleCreateChecklist}
+                  className="text-white font-medium"
+                  style={{
+                    padding: 'clamp(6px, 0.8vw, 8px) clamp(12px, 1.5vw, 16px)',
+                    borderRadius: '10px',
+                    backgroundColor: '#1E80D9',
+                    fontSize: 'clamp(12px, 1.5vw, 14px)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#166BB7';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#1E80D9';
+                  }}
+                >
+                  + Добавить чеклист
+                </button>
+              </div>
+
+              {loadingChecklists ? (
+                <div className="text-[#A1A1A4] text-center p-4" style={{ fontSize: 'clamp(14px, 1.8vw, 16px)' }}>
+                  Загрузка чеклистов...
+                </div>
+              ) : checklists.length === 0 ? (
+                <div className="text-[#A1A1A4] text-center p-4" style={{ fontSize: 'clamp(14px, 1.8vw, 16px)' }}>
+                  Нет чеклистов
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.5vw, 16px)' }}>
+                  {checklists.map((checklist) => {
+                    const items = checklistItems[checklist.id] || [];
+                    const completedCount = items.filter(i => i.is_done).length;
+                    const totalCount = items.length;
+                    
+                    return (
+                      <div
+                        key={checklist.id}
+                        className="bg-[#313236]"
+                        style={{
+                          borderRadius: '15px',
+                          padding: 'clamp(12px, 1.5vw, 16px)',
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-white font-medium" style={{ fontSize: 'clamp(14px, 1.8vw, 16px)' }}>
+                            Чеклист {completedCount}/{totalCount}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteChecklist(checklist.id)}
+                            className="text-[#FD5353] hover:text-[#FF0000] transition-colors"
+                            style={{
+                              fontSize: 'clamp(18px, 2.2vw, 22px)',
+                              lineHeight: '1',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              cursor: 'pointer',
+                              padding: '4px',
+                            }}
+                            title="Удалить чеклист"
+                          >
+                            ×
+                          </button>
+                        </div>
+
+                        {/* Элементы чеклиста */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1vw, 10px)', marginBottom: 'clamp(8px, 1vw, 10px)' }}>
+                          {items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-3"
+                              style={{
+                                padding: 'clamp(6px, 0.8vw, 8px)',
+                                borderRadius: '8px',
+                                backgroundColor: item.is_done ? '#2A2D31' : 'transparent',
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={item.is_done}
+                                onChange={() => handleToggleItem(item)}
+                                style={{
+                                  width: 'clamp(16px, 2vw, 18px)',
+                                  height: 'clamp(16px, 2vw, 18px)',
+                                  cursor: 'pointer',
+                                  accentColor: '#1E80D9',
+                                }}
+                              />
+                              <span
+                                className="flex-1 text-white"
+                                style={{
+                                  fontSize: 'clamp(14px, 1.8vw, 16px)',
+                                  textDecoration: item.is_done ? 'line-through' : 'none',
+                                  opacity: item.is_done ? 0.6 : 1,
+                                }}
+                              >
+                                {item.content}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem(item)}
+                                className="text-[#838486] hover:text-[#FD5353] transition-colors"
+                                style={{
+                                  fontSize: 'clamp(16px, 2vw, 18px)',
+                                  lineHeight: '1',
+                                  border: 'none',
+                                  backgroundColor: 'transparent',
+                                  cursor: 'pointer',
+                                  padding: '2px 4px',
+                                }}
+                                title="Удалить элемент"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Поле для добавления нового элемента */}
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            className="flex-1 text-white placeholder:text-gray-400 outline-none"
+                            style={{
+                              backgroundColor: '#242528',
+                              borderRadius: '8px',
+                              padding: 'clamp(8px, 1vw, 10px)',
+                              fontSize: 'clamp(14px, 1.8vw, 16px)',
+                              border: '1px solid #404040',
+                            }}
+                            placeholder="Добавить элемент..."
+                            value={newItemContent[checklist.id] || ''}
+                            onChange={(e) => {
+                              setNewItemContent({
+                                ...newItemContent,
+                                [checklist.id]: e.target.value,
+                              });
+                            }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleCreateItem(checklist.id);
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleCreateItem(checklist.id)}
+                            className="text-white font-medium"
+                            style={{
+                              padding: 'clamp(8px, 1vw, 10px) clamp(12px, 1.5vw, 16px)',
+                              borderRadius: '8px',
+                              backgroundColor: '#1E80D9',
+                              fontSize: 'clamp(12px, 1.5vw, 14px)',
+                              border: 'none',
+                              cursor: 'pointer',
+                              transition: 'background-color 0.3s ease',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#166BB7';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#1E80D9';
+                            }}
+                          >
+                            Добавить
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Кнопки */}
           <div className="flex justify-center" style={{ marginTop: 'clamp(40px, 5vw, 55px)', gap: 'clamp(30px, 4vw, 50px)' }}>
