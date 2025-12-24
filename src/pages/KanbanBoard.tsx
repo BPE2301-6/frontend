@@ -17,6 +17,7 @@ import { tagsApi, Tag } from '@shared/api/tags';
 import { createTask as createTaskApi, updateTask as updateTaskApi, fetchTasks } from '@shared/api/tasks';
 import { Task, TaskCreatePayload, Project, StatusCreatePayload } from '@shared/api/types';
 import { ApiError } from '@shared/api/httpClient';
+import { checklistsApi, Checklist, ChecklistItem } from '@shared/api/checklists';
 
 const PRIORITY_COLOR: Record<string, string> = {
   HIGH: '#FD5353',
@@ -81,6 +82,46 @@ interface TaskCardProps {
 
 function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDragging }: TaskCardProps) {
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
+  const [checklists, setChecklists] = useState<Checklist[]>([]);
+  const [checklistItems, setChecklistItems] = useState<Record<string, ChecklistItem[]>>({});
+  
+  // Загрузка чеклистов для задачи
+  useEffect(() => {
+    const loadChecklists = async () => {
+      try {
+        const loadedChecklists = await checklistsApi.list(task.id);
+        setChecklists(loadedChecklists);
+        
+        const itemsMap: Record<string, ChecklistItem[]> = {};
+        for (const checklist of loadedChecklists) {
+          const items = await checklistsApi.getItems(checklist.id);
+          itemsMap[checklist.id] = items;
+        }
+        setChecklistItems(itemsMap);
+      } catch (error) {
+        // Игнорируем ошибки загрузки чеклистов
+      }
+    };
+    
+    loadChecklists();
+  }, [task.id]);
+  
+  // Переключение состояния элемента чеклиста
+  const handleToggleChecklistItem = async (e: React.MouseEvent, item: ChecklistItem) => {
+    e.stopPropagation(); // Предотвращаем открытие модального окна
+    try {
+      const updatedItem = await checklistsApi.updateItem(item.id, {
+        is_done: !item.is_done,
+      });
+      const items = checklistItems[item.checklist_id] || [];
+      setChecklistItems({
+        ...checklistItems,
+        [item.checklist_id]: items.map(i => i.id === item.id ? updatedItem : i),
+      });
+    } catch (error) {
+      console.error('Ошибка обновления элемента чеклиста:', error);
+    }
+  };
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -163,6 +204,62 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
               >
                 {tag.name}
               </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Чеклисты */}
+      {checklists.length > 0 && (
+        <div className="mb-3">
+          {checklists.map((checklist) => {
+            const items = checklistItems[checklist.id] || [];
+            if (items.length === 0) return null;
+            
+            return (
+              <div key={checklist.id} style={{ marginBottom: 'clamp(8px, 1vw, 12px)' }}>
+                {items.slice(0, 3).map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2"
+                    style={{
+                      marginBottom: 'clamp(4px, 0.5vw, 6px)',
+                    }}
+                    onClick={(e) => handleToggleChecklistItem(e, item)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={item.is_done}
+                      onChange={() => {}}
+                      onClick={(e) => handleToggleChecklistItem(e, item)}
+                      style={{
+                        width: 'clamp(12px, 1.5vw, 14px)',
+                        height: 'clamp(12px, 1.5vw, 14px)',
+                        cursor: 'pointer',
+                        accentColor: '#1E80D9',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span
+                      className="text-[#838486]"
+                      style={{
+                        fontSize: 'clamp(11px, 1.2vw, 13px)',
+                        textDecoration: item.is_done ? 'line-through' : 'none',
+                        opacity: item.is_done ? 0.6 : 1,
+                        cursor: 'pointer',
+                        lineHeight: '1.3',
+                      }}
+                    >
+                      {item.content}
+                    </span>
+                  </div>
+                ))}
+                {items.length > 3 && (
+                  <div className="text-[#838486]" style={{ fontSize: 'clamp(10px, 1.1vw, 12px)', marginTop: '4px' }}>
+                    +{items.length - 3} еще
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -728,12 +825,6 @@ export default function KanbanBoard() {
           minHeight: 'calc(100vh - clamp(120px, 15vh, 148px))',
         }}
       >
-        {(loadingStatuses || loadingTasks) && (
-          <div className="text-[#A1A1A4]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>
-            Загружаем данные...
-          </div>
-        )}
-
         {!loadingStatuses && statuses.length === 0 && (
           <div className="flex flex-col items-center justify-center w-full" style={{ gap: '20px', padding: '40px' }}>
             <div className="text-[#A1A1A4]" style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}>

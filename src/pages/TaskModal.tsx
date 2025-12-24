@@ -172,21 +172,6 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
     }
   };
 
-  // Обновление элемента чеклиста (переключение is_done)
-  const handleToggleItem = async (item: ChecklistItem) => {
-    try {
-      const updatedItem = await checklistsApi.updateItem(item.id, {
-        is_done: !item.is_done,
-      });
-      const items = checklistItems[item.checklist_id] || [];
-      setChecklistItems({
-        ...checklistItems,
-        [item.checklist_id]: items.map(i => i.id === item.id ? updatedItem : i),
-      });
-    } catch (error) {
-      console.error('Ошибка обновления элемента:', error);
-    }
-  };
 
   // Удаление элемента чеклиста
   const handleDeleteItem = async (item: ChecklistItem) => {
@@ -475,9 +460,9 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
             </div>
           </div>
 
-          {/* Чеклисты - только для существующих задач */}
+          {/* Чеклисты */}
           {task && (
-            <div className="mb-10">
+            <div className="mb-10" style={{ marginTop: 'clamp(20px, 2.5vw, 30px)' }}>
               <div className="flex items-center justify-between mb-4">
                 <label
                   className="block text-white font-medium"
@@ -518,7 +503,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                   Нет чеклистов
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.5vw, 16px)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 1.5vw, 16px)', alignItems: 'center' }}>
                   {checklists.map((checklist) => {
                     const items = checklistItems[checklist.id] || [];
                     const completedCount = items.filter(i => i.is_done).length;
@@ -531,6 +516,8 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                         style={{
                           borderRadius: '15px',
                           padding: 'clamp(12px, 1.5vw, 16px)',
+                          width: '100%',
+                          maxWidth: '100%',
                         }}
                       >
                         <div className="flex items-center justify-between mb-3">
@@ -555,7 +542,7 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                           </button>
                         </div>
 
-                        {/* Элементы чеклиста */}
+                        {/* Элементы чеклиста - только отображение и удаление, без отметки */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1vw, 10px)', marginBottom: 'clamp(8px, 1vw, 10px)' }}>
                           {items.map((item) => (
                             <div
@@ -564,20 +551,9 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                               style={{
                                 padding: 'clamp(6px, 0.8vw, 8px)',
                                 borderRadius: '8px',
-                                backgroundColor: item.is_done ? '#2A2D31' : 'transparent',
+                                backgroundColor: 'transparent',
                               }}
                             >
-                              <input
-                                type="checkbox"
-                                checked={item.is_done}
-                                onChange={() => handleToggleItem(item)}
-                                style={{
-                                  width: 'clamp(16px, 2vw, 18px)',
-                                  height: 'clamp(16px, 2vw, 18px)',
-                                  cursor: 'pointer',
-                                  accentColor: '#1E80D9',
-                                }}
-                              />
                               <span
                                 className="flex-1 text-white"
                                 style={{
@@ -590,7 +566,10 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
                               </span>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteItem(item)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteItem(item);
+                                }}
                                 className="text-[#838486] hover:text-[#FD5353] transition-colors"
                                 style={{
                                   fontSize: 'clamp(16px, 2vw, 18px)',

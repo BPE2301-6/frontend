@@ -109,16 +109,17 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
         {/* Заголовок */}
         <h2
-          className="font-bold text-white mb-12 text-center"
+          className="font-bold text-white text-center"
           style={{
             fontSize: 'clamp(20px, 2.5vw, 24px)',
+            marginBottom: 'clamp(20px, 2.5vw, 30px)',
           }}
         >
           Профиль пользователя
         </h2>
 
         {/* Аватар с кнопкой изменения */}
-        <div className="flex flex-col items-center mb-10 mt-10">
+        <div className="flex flex-col items-center mb-10">
           <div
             className="overflow-hidden border-4 border-[#1E80D9]"
             style={{
@@ -191,7 +192,7 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         </div>
 
         {/* Информация */}
-        <div className="mb-10">
+        <div className="mb-10" style={{ marginTop: 'clamp(20px, 2.5vw, 30px)' }}>
           <div
             className="text-white"
             style={{
