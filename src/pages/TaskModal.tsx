@@ -280,9 +280,10 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
 
         {/* Заголовок */}
         <h2
-          className="font-bold text-white mb-8 text-center"
+          className="font-bold text-white text-center"
           style={{
             fontSize: 'clamp(20px, 2.5vw, 24px)',
+            marginBottom: 'clamp(24px, 3vw, 32px)',
           }}
         >
           {task ? 'Редактировать задачу' : 'Создать задачу'}
@@ -311,8 +312,11 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           {/* Колонка (Статус) */}
           <div className="mb-10">
             <label
-              className="block text-white font-medium mb-4"
-              style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+              className="block text-white font-medium"
+              style={{ 
+                fontSize: 'clamp(16px, 2vw, 20px)',
+                marginBottom: 'clamp(12px, 1.5vw, 16px)',
+              }}
             >
               Колонка
             </label>
@@ -340,8 +344,11 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           {/* Описание */}
           <div className="mb-10">
             <label
-              className="block text-white font-medium mb-4"
-              style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+              className="block text-white font-medium"
+              style={{ 
+                fontSize: 'clamp(16px, 2vw, 20px)',
+                marginBottom: 'clamp(12px, 1.5vw, 16px)',
+              }}
             >
               Описание
             </label>
@@ -365,12 +372,15 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           <div className="grid grid-cols-2 gap-8 mb-10">
             <div>
               <label
-                className="block text-white font-medium mb-4"
-                style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+                className="block text-white font-medium"
+                style={{ 
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  marginBottom: 'clamp(12px, 1.5vw, 16px)',
+                }}
               >
                 Приоритет
               </label>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center" style={{ gap: 'clamp(8px, 1vw, 12px)' }}>
                 <select
                   className="flex-1 text-white outline-none"
                   style={{
@@ -401,8 +411,11 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
 
             <div>
               <label
-                className="block text-white font-medium mb-4"
-                style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+                className="block text-white font-medium"
+                style={{ 
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  marginBottom: 'clamp(12px, 1.5vw, 16px)',
+                }}
               >
                 Исполнитель
               </label>
@@ -432,8 +445,11 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
           <div className="grid grid-cols-2 gap-8 mb-10">
             <div>
               <label
-                className="block text-white font-medium mb-4"
-                style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+                className="block text-white font-medium"
+                style={{ 
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  marginBottom: 'clamp(12px, 1.5vw, 16px)',
+                }}
               >
                 Дедлайн
               </label>
@@ -454,8 +470,11 @@ export default function TaskModal({ isOpen, onClose, onSave, statuses = [], task
 
             <div>
               <label
-                className="block text-white font-medium mb-4"
-                style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+                className="block text-white font-medium"
+                style={{ 
+                  fontSize: 'clamp(16px, 2vw, 20px)',
+                  marginBottom: 'clamp(12px, 1.5vw, 16px)',
+                }}
               >
                 Теги
               </label>

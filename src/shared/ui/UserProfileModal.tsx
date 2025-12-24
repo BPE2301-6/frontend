@@ -207,8 +207,11 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
         <div className="mb-12">
           <div>
             <label
-              className="block text-white font-medium mb-4"
-              style={{ fontSize: 'clamp(16px, 2vw, 20px)' }}
+              className="block text-white font-medium"
+              style={{ 
+                fontSize: 'clamp(16px, 2vw, 20px)',
+                marginBottom: 'clamp(12px, 1.5vw, 16px)',
+              }}
             >
               Имя
             </label>
