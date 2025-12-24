@@ -128,9 +128,10 @@ export default function AddMemberModal({
 
         {/* Заголовок */}
         <h2
-          className="font-bold text-white mb-12 text-center"
+          className="font-bold text-white text-center"
           style={{
             fontSize: 'clamp(20px, 2.5vw, 24px)',
+            marginBottom: 'clamp(24px, 3vw, 32px)',
           }}
         >
           Добавить участника

@@ -322,17 +322,19 @@ export default function ProjectSelection() {
                     backgroundColor: '#2A2D31',
                     display: 'flex',
                     alignItems: 'center',
+                    flex: '1 1 auto',
+                    minWidth: 0,
                   }}
                 />
                 <button
                   type="submit"
-                  className="text-white font-medium leading-tight lowercase"
+                  className="text-white font-medium leading-tight lowercase flex-shrink-0"
                   style={{
-                    width: 'clamp(180px, 22vw, 280px)',
+                    width: 'clamp(120px, 15vw, 180px)',
                     height: 'clamp(70px, 8vw, 90px)',
                     borderRadius: '9999px',
                     backgroundColor: '#1E80D9',
-                    fontSize: 'clamp(24px, 2.5vw, 32px)',
+                    fontSize: 'clamp(16px, 2vw, 20px)',
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'background-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
