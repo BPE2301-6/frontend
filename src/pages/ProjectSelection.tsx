@@ -22,7 +22,7 @@ export default function ProjectSelection() {
   const [createError, setCreateError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const limit = 20;
+  const limit = 10;
 
   const {
     projects,
@@ -326,7 +326,7 @@ export default function ProjectSelection() {
                   type="submit"
                   className="text-white font-medium leading-tight lowercase"
                   style={{
-                    width: 'clamp(150px, 18vw, 220px)',
+                    width: 'clamp(180px, 22vw, 280px)',
                     height: 'clamp(70px, 8vw, 90px)',
                     borderRadius: '9999px',
                     backgroundColor: '#1E80D9',
@@ -390,7 +390,7 @@ export default function ProjectSelection() {
 
             {!loading && !error && projects.length > 0 && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 w-full" style={{ gap: 'clamp(24px, 3vw, 40px)', marginTop: 'clamp(40px, 5vw, 60px)', padding: 'clamp(16px, 2vw, 24px)' }}>
+                <div className="grid grid-cols-5 w-full" style={{ gap: 'clamp(16px, 2vw, 24px)', marginTop: 'clamp(24px, 3vw, 32px)', marginBottom: 'clamp(24px, 3vw, 32px)', padding: 'clamp(16px, 2vw, 24px)' }}>
                   {projects.map((project) => (
                     <button
                       key={project.id}
@@ -400,13 +400,14 @@ export default function ProjectSelection() {
                         transform: 'scale(1)',
                         border: '3px solid #1E80D9',
                         borderRadius: '16px',
-                        padding: 'clamp(24px, 3vw, 32px)',
+                        padding: 'clamp(12px, 1.5vw, 20px)',
                         width: '100%',
-                        minHeight: 'clamp(200px, 25vw, 280px)',
-                        maxHeight: 'clamp(200px, 25vw, 280px)',
+                        minHeight: 'clamp(120px, 15vw, 160px)',
+                        maxHeight: 'clamp(120px, 15vw, 160px)',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'flex-start',
+                        overflow: 'hidden',
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.02)';
@@ -420,9 +421,15 @@ export default function ProjectSelection() {
                       }}
                     >
                     <div
-                      className="font-semibold mb-2 text-white"
+                      className="font-semibold mb-1 text-white"
                       style={{
-                        fontSize: 'clamp(20px, 2.5vw, 28px)',
+                        fontSize: 'clamp(14px, 1.5vw, 18px)',
+                        lineHeight: '1.3',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
                       }}
                     >
                       {project.name}
@@ -431,7 +438,13 @@ export default function ProjectSelection() {
                       <div
                         className="text-[#A1A1A4]"
                         style={{
-                          fontSize: 'clamp(16px, 2vw, 22px)',
+                          fontSize: 'clamp(11px, 1.2vw, 14px)',
+                          lineHeight: '1.3',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
                         }}
                       >
                         {project.description}
