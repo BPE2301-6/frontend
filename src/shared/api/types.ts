@@ -49,7 +49,7 @@ export interface Task {
   updated_at: string;
   tag_ids?: string[];
   timedelta?: {
-    status: 'low' | 'mid' | 'high';
+    status: 'LOW' | 'MEDIUM' | 'HIGH';
     delta: number; // 0-100
   };
 }
@@ -63,6 +63,10 @@ export interface TaskCreatePayload {
   assignee_id?: string | null;
   due_date?: string | null;
   tag_ids?: string[];
+  timedelta?: {
+    status: 'LOW' | 'MEDIUM' | 'HIGH';
+    delta: number; // 0-100
+  };
 }
 
 export type TaskUpdatePayload = Partial<TaskCreatePayload>;

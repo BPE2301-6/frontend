@@ -392,49 +392,57 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
       </button>
 
       {/* Индикатор дедлайна - узкая полоска внизу карточки */}
-      {task.due_date && task.timedelta && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            overflow: 'hidden',
-            zIndex: 2,
-          }}
-        >
-          {/* Фон индикатора */}
+      {task.due_date && task.timedelta && (() => {
+        const delta = Math.min(100, Math.max(0, task.timedelta.delta));
+        // delta показывает время с последнего обновления статуса:
+        // 0 = только что обновлена (зеленый), 100 = неделя и больше (красный)
+        // Определяем цвет на основе delta: 0-33 = LOW (зеленый), 34-66 = MEDIUM (желтый), 67-100 = HIGH (красный)
+        let indicatorColor = '#62C53E'; // зеленый по умолчанию (LOW - задача недавно обновлена)
+        if (delta >= 67) {
+          indicatorColor = '#FD5353'; // красный (HIGH - задача давно не обновлялась, неделя+)
+        } else if (delta >= 34) {
+          indicatorColor = '#FDD253'; // желтый (MEDIUM - среднее время с обновления)
+        }
+        
+        return (
           <div
             style={{
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
-              height: '100%',
-              backgroundColor: '#404040',
+              height: '4px',
+              overflow: 'hidden',
+              zIndex: 2,
             }}
-          />
-          {/* Заполненная часть индикатора */}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              height: '100%',
-              width: `${Math.min(100, Math.max(0, task.timedelta.delta))}%`,
-              backgroundColor:
-                task.timedelta.status === 'low'
-                  ? '#62C53E' // зеленый
-                  : task.timedelta.status === 'mid'
-                  ? '#FDD253' // желтый
-                  : '#FD5353', // красный
-              transition: 'width 0.3s ease, background-color 0.3s ease',
-              zIndex: 1,
-            }}
-          />
-        </div>
-      )}
+          >
+            {/* Фон индикатора */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '100%',
+                backgroundColor: '#404040',
+              }}
+            />
+            {/* Заполненная часть индикатора */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                height: '100%',
+                width: `${delta}%`,
+                backgroundColor: indicatorColor,
+                transition: 'width 0.3s ease, background-color 0.3s ease',
+                zIndex: 1,
+              }}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -820,17 +828,17 @@ export default function KanbanBoard() {
               style={{
                 padding: 'clamp(8px, 1vw, 12px) clamp(16px, 2vw, 24px)',
                 borderRadius: '32px',
-                backgroundColor: '#1E80D9',
+                backgroundColor: '#FF8800',
                 fontSize: 'clamp(14px, 1.5vw, 18px)',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'background-color 0.3s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#166BB7';
+                e.currentTarget.style.backgroundColor = '#E67700';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#1E80D9';
+                e.currentTarget.style.backgroundColor = '#FF8800';
               }}
             >
               Добавить колонку
