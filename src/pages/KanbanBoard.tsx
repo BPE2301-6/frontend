@@ -8,6 +8,7 @@ import AddMemberModal from '@shared/ui/AddMemberModal';
 import ProjectMembersList from '@shared/ui/ProjectMembersList';
 import ProjectSelectorDropdown from '@shared/ui/ProjectSelectorDropdown';
 import { useStatuses } from '@entities/statuses/useStatuses';
+import { updateStatus } from '@shared/api/statuses';
 import { useTasks } from '@entities/tasks/useTasks';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 import { useProjectMembers } from '@entities/projectMembers/useProjectMembers';
@@ -85,16 +86,6 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [checklistItems, setChecklistItems] = useState<Record<string, ChecklistItem[]>>({});
-  const [currentDate, setCurrentDate] = useState(new Date());
-  
-  // Обновляем текущую дату каждую минуту для динамического обновления индикатора
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentDate(new Date());
-    }, 60000); // Обновляем каждую минуту
-    
-    return () => clearInterval(interval);
-  }, []);
   
   // Загрузка чеклистов для задачи
   useEffect(() => {
@@ -407,35 +398,18 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
       </button>
 
       {/* Индикатор дедлайна - узкая полоска внизу карточки */}
-      {task.due_date && (() => {
-        // Вычисляем индикатор динамически относительно текущей даты
-        const dueDate = new Date(task.due_date);
-        const today = new Date(currentDate);
-        today.setHours(0, 0, 0, 0);
-        dueDate.setHours(0, 0, 0, 0);
+      {task.timedelta && typeof task.timedelta.delta === 'number' && (() => {
+        // Используем данные с бэка: delta для процента заполнения, status для цвета
+        const delta = Math.min(100, Math.max(0, task.timedelta.delta));
         
-        const diffTime = dueDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        let indicatorColor = '#62C53E'; // зеленый по умолчанию
-        
-        // Логика определения цвета:
-        // <= 2 дня (включая просроченные) = красный
-        // 3-4 дня = желтый
-        // > 7 дней = зеленый
-        // 5-7 дней = желтый (промежуточное состояние)
-        if (diffDays <= 2) {
-          // Просрочено или осталось 2 дня или меньше - красный
-          indicatorColor = '#FD5353';
-        } else if (diffDays >= 3 && diffDays <= 4) {
-          // 3-4 дня до дедлайна - желтый
-          indicatorColor = '#FDD253';
-        } else if (diffDays > 7) {
-          // Больше 7 дней - зеленый
-          indicatorColor = '#62C53E';
-        } else {
-          // 5-7 дней - желтый (промежуточное состояние)
-          indicatorColor = '#FDD253';
+        // Определяем цвет на основе status из timedelta
+        let indicatorColor = '#62C53E'; // зеленый по умолчанию (LOW)
+        if (task.timedelta.status === 'HIGH') {
+          indicatorColor = '#FD5353'; // красный
+        } else if (task.timedelta.status === 'MEDIUM') {
+          indicatorColor = '#FDD253'; // желтый
+        } else if (task.timedelta.status === 'LOW') {
+          indicatorColor = '#62C53E'; // зеленый
         }
         
         return (
@@ -450,7 +424,7 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
               zIndex: 2,
             }}
           >
-            {/* Вся шкала закрашена одним цветом */}
+            {/* Фон индикатора */}
             <div
               style={{
                 position: 'absolute',
@@ -458,10 +432,22 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
                 left: 0,
                 right: 0,
                 height: '100%',
-                width: '100%',
+                backgroundColor: '#404040',
+                zIndex: 0,
+              }}
+            />
+            {/* Заполненная часть индикатора */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                height: '100%',
+                width: `${delta}%`,
                 backgroundColor: indicatorColor,
-                transition: 'background-color 0.3s ease',
+                transition: 'width 0.3s ease, background-color 0.3s ease',
                 zIndex: 1,
+                minWidth: delta > 0 ? '1px' : '0px',
               }}
             />
           </div>
@@ -515,37 +501,10 @@ export default function KanbanBoard() {
     isApiError: isStatusApiError,
   } = useStatuses(projectId);
 
-  // Локальное состояние для порядка колонок (только на фронте)
-  const [statusOrder, setStatusOrder] = useState<string[]>([]);
-
-  // Инициализируем и обновляем порядок колонок при загрузке или изменении
-  useEffect(() => {
-    if (rawStatuses.length > 0) {
-      const sorted = [...rawStatuses].sort((a, b) => a.position - b.position);
-      const newOrder = sorted.map(s => s.id);
-      
-      // Обновляем порядок, сохраняя существующий порядок для существующих колонок
-      setStatusOrder(prev => {
-        if (prev.length === 0) {
-          return newOrder;
-        }
-        // Сохраняем порядок существующих колонок
-        const existingOrder = prev.filter(id => newOrder.includes(id));
-        // Добавляем новые колонки в конец
-        const newStatuses = newOrder.filter(id => !prev.includes(id));
-        return [...existingOrder, ...newStatuses];
-      });
-    }
-  }, [rawStatuses]);
-
-  // Сортируем статусы по локальному порядку
+  // Сортируем статусы по position из API
   const statuses = useMemo(() => {
-    if (statusOrder.length === 0) {
-      return [...rawStatuses].sort((a, b) => a.position - b.position);
-    }
-    const statusMap = new Map(rawStatuses.map(s => [s.id, s]));
-    return statusOrder.map(id => statusMap.get(id)).filter(Boolean) as typeof rawStatuses;
-  }, [rawStatuses, statusOrder]);
+    return [...rawStatuses].sort((a, b) => a.position - b.position);
+  }, [rawStatuses]);
 
   const {
     tasks,
@@ -783,23 +742,34 @@ export default function KanbanBoard() {
     }
   };
 
-  const handleMoveStatus = (statusId: string, direction: 'left' | 'right') => {
-    const currentIndex = statusOrder.findIndex(id => id === statusId);
-    if (currentIndex === -1) return;
+  const handleMoveStatus = async (statusId: string, direction: 'left' | 'right') => {
+    const currentStatus = statuses.find(s => s.id === statusId);
+    if (!currentStatus) return;
 
+    const currentIndex = statuses.findIndex(s => s.id === statusId);
     let targetIndex: number;
+
     if (direction === 'left') {
       targetIndex = currentIndex - 1;
     } else {
       targetIndex = currentIndex + 1;
     }
 
-    if (targetIndex < 0 || targetIndex >= statusOrder.length) return;
+    if (targetIndex < 0 || targetIndex >= statuses.length) return;
 
-    // Меняем порядок локально (только на фронте)
-    const newOrder = [...statusOrder];
-    [newOrder[currentIndex], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[currentIndex]];
-    setStatusOrder(newOrder);
+    const targetStatus = statuses[targetIndex];
+    
+    try {
+      // Меняем позиции через API
+      await updateStatus(statusId, { position: targetStatus.position });
+      await updateStatus(targetStatus.id, { position: currentStatus.position });
+      // Перезагружаем статусы для получения актуального порядка
+      await reloadStatuses();
+    } catch (err) {
+      console.error('Ошибка перемещения колонки:', err);
+      const message = err instanceof Error ? err.message : 'Ошибка перемещения колонки';
+      alert(message);
+    }
   };
 
   const handleDeleteStatus = async (statusId: string) => {
@@ -817,8 +787,6 @@ export default function KanbanBoard() {
       
       // Затем удаляем саму колонку
       await deleteStatus(statusId);
-      // Удаляем колонку из локального порядка
-      setStatusOrder(prev => prev.filter(id => id !== statusId));
       setDeleteStatusId(null);
     } catch (err) {
       const message =
