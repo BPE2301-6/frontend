@@ -8,6 +8,7 @@ import AddMemberModal from '@shared/ui/AddMemberModal';
 import ProjectMembersList from '@shared/ui/ProjectMembersList';
 import ProjectSelectorDropdown from '@shared/ui/ProjectSelectorDropdown';
 import { useStatuses } from '@entities/statuses/useStatuses';
+import { updateStatus } from '@shared/api/statuses';
 import { useTasks } from '@entities/tasks/useTasks';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 import { useProjectMembers } from '@entities/projectMembers/useProjectMembers';
@@ -247,6 +248,11 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
       {/* Заголовок */}
       <div className="mb-3 pr-4">
         <div className="font-medium text-white" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)', lineHeight: '1.4' }}>
+          {task.key && (
+            <span className="text-[#838486] mr-2" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
+              {task.key}
+            </span>
+          )}
           {task.title}
         </div>
       </div>
@@ -501,13 +507,19 @@ export default function KanbanBoard() {
   }, [projectId, navigate]);
 
   const {
-    statuses,
+    statuses: rawStatuses,
     loading: loadingStatuses,
     error: statusesError,
     createStatus,
     deleteStatus,
+    reload: reloadStatuses,
     isApiError: isStatusApiError,
   } = useStatuses(projectId);
+
+  // Сортируем статусы по position
+  const statuses = useMemo(() => {
+    return [...rawStatuses].sort((a, b) => a.position - b.position);
+  }, [rawStatuses]);
 
   const {
     tasks,
@@ -740,6 +752,35 @@ export default function KanbanBoard() {
       const message =
         (isTaskApiError(err) && (err as ApiError).payload?.message) ||
         (err instanceof Error ? err.message : 'Ошибка удаления задачи');
+      alert(message);
+    }
+  };
+
+  const handleMoveStatus = async (statusId: string, direction: 'left' | 'right') => {
+    const currentStatus = statuses.find(s => s.id === statusId);
+    if (!currentStatus) return;
+
+    const currentIndex = statuses.findIndex(s => s.id === statusId);
+    let targetIndex: number;
+
+    if (direction === 'left') {
+      targetIndex = currentIndex - 1;
+    } else {
+      targetIndex = currentIndex + 1;
+    }
+
+    if (targetIndex < 0 || targetIndex >= statuses.length) return;
+
+    const targetStatus = statuses[targetIndex];
+    
+    try {
+      // Меняем позиции местами
+      await updateStatus(statusId, { position: targetStatus.position });
+      await updateStatus(targetStatus.id, { position: currentStatus.position });
+      await reloadStatuses();
+    } catch (err) {
+      console.error('Ошибка перемещения колонки:', err);
+      const message = err instanceof Error ? err.message : 'Ошибка перемещения колонки';
       alert(message);
     }
   };
@@ -1010,7 +1051,7 @@ export default function KanbanBoard() {
               maxWidth: 'clamp(320px, 28vw, 400px)',
             }}
           >
-            {/* Название колонки с кнопкой удаления */}
+            {/* Название колонки с кнопками управления */}
             <div
               className="flex items-center justify-center mb-4 relative"
               style={{
@@ -1018,6 +1059,33 @@ export default function KanbanBoard() {
                 paddingRight: 'clamp(10px, 1.5vw, 20px)',
               }}
             >
+              {/* Стрелка влево */}
+              {statuses.findIndex(s => s.id === status.id) > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveStatus(status.id, 'left');
+                  }}
+                  className="absolute text-white hover:text-[#FF8800] transition-colors"
+                  style={{
+                    left: 'clamp(10px, 1.5vw, 20px)',
+                    width: '24px',
+                    height: '24px',
+                    fontSize: '18px',
+                    lineHeight: '1',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  title="Переместить влево"
+                >
+                  ←
+                </button>
+              )}
+              
               <div
                 className="text-white font-normal"
                 style={{
@@ -1026,6 +1094,34 @@ export default function KanbanBoard() {
               >
                 {status.name}
               </div>
+              
+              {/* Стрелка вправо */}
+              {statuses.findIndex(s => s.id === status.id) < statuses.length - 1 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveStatus(status.id, 'right');
+                  }}
+                  className="absolute text-white hover:text-[#FF8800] transition-colors"
+                  style={{
+                    right: 'clamp(40px, 4vw, 50px)',
+                    width: '24px',
+                    height: '24px',
+                    fontSize: '18px',
+                    lineHeight: '1',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  title="Переместить вправо"
+                >
+                  →
+                </button>
+              )}
+              
               <button
                 onClick={() => setDeleteStatusId(status.id)}
                 className="absolute text-white hover:text-[#FD5353] transition-colors"
