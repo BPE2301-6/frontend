@@ -8,7 +8,6 @@ import AddMemberModal from '@shared/ui/AddMemberModal';
 import ProjectMembersList from '@shared/ui/ProjectMembersList';
 import ProjectSelectorDropdown from '@shared/ui/ProjectSelectorDropdown';
 import { useStatuses } from '@entities/statuses/useStatuses';
-import { updateStatus } from '@shared/api/statuses';
 import { useTasks } from '@entities/tasks/useTasks';
 import { useAuthStore } from '@entities/auth/useAuthStore';
 import { useProjectMembers } from '@entities/projectMembers/useProjectMembers';
@@ -247,12 +246,12 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
 
       {/* Заголовок */}
       <div className="mb-3 pr-4">
+        {task.key && (
+          <div className="text-[#838486] mb-1" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)', lineHeight: '1.4' }}>
+            {task.key}
+          </div>
+        )}
         <div className="font-medium text-white" style={{ fontSize: 'clamp(14px, 1.5vw, 16px)', lineHeight: '1.4' }}>
-          {task.key && (
-            <span className="text-[#838486] mr-2" style={{ fontSize: 'clamp(12px, 1.3vw, 14px)' }}>
-              {task.key}
-            </span>
-          )}
           {task.title}
         </div>
       </div>
@@ -516,10 +515,37 @@ export default function KanbanBoard() {
     isApiError: isStatusApiError,
   } = useStatuses(projectId);
 
-  // Сортируем статусы по position
-  const statuses = useMemo(() => {
-    return [...rawStatuses].sort((a, b) => a.position - b.position);
+  // Локальное состояние для порядка колонок (только на фронте)
+  const [statusOrder, setStatusOrder] = useState<string[]>([]);
+
+  // Инициализируем и обновляем порядок колонок при загрузке или изменении
+  useEffect(() => {
+    if (rawStatuses.length > 0) {
+      const sorted = [...rawStatuses].sort((a, b) => a.position - b.position);
+      const newOrder = sorted.map(s => s.id);
+      
+      // Обновляем порядок, сохраняя существующий порядок для существующих колонок
+      setStatusOrder(prev => {
+        if (prev.length === 0) {
+          return newOrder;
+        }
+        // Сохраняем порядок существующих колонок
+        const existingOrder = prev.filter(id => newOrder.includes(id));
+        // Добавляем новые колонки в конец
+        const newStatuses = newOrder.filter(id => !prev.includes(id));
+        return [...existingOrder, ...newStatuses];
+      });
+    }
   }, [rawStatuses]);
+
+  // Сортируем статусы по локальному порядку
+  const statuses = useMemo(() => {
+    if (statusOrder.length === 0) {
+      return [...rawStatuses].sort((a, b) => a.position - b.position);
+    }
+    const statusMap = new Map(rawStatuses.map(s => [s.id, s]));
+    return statusOrder.map(id => statusMap.get(id)).filter(Boolean) as typeof rawStatuses;
+  }, [rawStatuses, statusOrder]);
 
   const {
     tasks,
@@ -736,8 +762,9 @@ export default function KanbanBoard() {
     }
     
     try {
-      await createStatus(payload);
+      const newStatus = await createStatus(payload);
       setIsStatusModalOpen(false);
+      // Новая колонка будет добавлена автоматически через useEffect при обновлении rawStatuses
     } catch (err) {
       // Ошибка будет обработана в StatusModal, просто пробрасываем дальше
       throw err;
@@ -756,33 +783,23 @@ export default function KanbanBoard() {
     }
   };
 
-  const handleMoveStatus = async (statusId: string, direction: 'left' | 'right') => {
-    const currentStatus = statuses.find(s => s.id === statusId);
-    if (!currentStatus) return;
+  const handleMoveStatus = (statusId: string, direction: 'left' | 'right') => {
+    const currentIndex = statusOrder.findIndex(id => id === statusId);
+    if (currentIndex === -1) return;
 
-    const currentIndex = statuses.findIndex(s => s.id === statusId);
     let targetIndex: number;
-
     if (direction === 'left') {
       targetIndex = currentIndex - 1;
     } else {
       targetIndex = currentIndex + 1;
     }
 
-    if (targetIndex < 0 || targetIndex >= statuses.length) return;
+    if (targetIndex < 0 || targetIndex >= statusOrder.length) return;
 
-    const targetStatus = statuses[targetIndex];
-    
-    try {
-      // Меняем позиции местами
-      await updateStatus(statusId, { position: targetStatus.position });
-      await updateStatus(targetStatus.id, { position: currentStatus.position });
-      await reloadStatuses();
-    } catch (err) {
-      console.error('Ошибка перемещения колонки:', err);
-      const message = err instanceof Error ? err.message : 'Ошибка перемещения колонки';
-      alert(message);
-    }
+    // Меняем порядок локально (только на фронте)
+    const newOrder = [...statusOrder];
+    [newOrder[currentIndex], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[currentIndex]];
+    setStatusOrder(newOrder);
   };
 
   const handleDeleteStatus = async (statusId: string) => {
@@ -800,6 +817,8 @@ export default function KanbanBoard() {
       
       // Затем удаляем саму колонку
       await deleteStatus(statusId);
+      // Удаляем колонку из локального порядка
+      setStatusOrder(prev => prev.filter(id => id !== statusId));
       setDeleteStatusId(null);
     } catch (err) {
       const message =
