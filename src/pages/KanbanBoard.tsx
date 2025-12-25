@@ -411,46 +411,26 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
         
         const diffTime = dueDate.getTime() - today.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const weekInDays = 7;
         
         let indicatorColor = '#62C53E'; // зеленый по умолчанию
-        let fillPercentage = 0;
         
-        if (diffDays < 0) {
-          // Дедлайн прошел - красный, 100%
+        // Логика определения цвета:
+        // <= 2 дня (включая просроченные) = красный
+        // 3-4 дня = желтый
+        // > 7 дней = зеленый
+        // 5-7 дней = желтый (промежуточное состояние)
+        if (diffDays <= 2) {
+          // Просрочено или осталось 2 дня или меньше - красный
           indicatorColor = '#FD5353';
-          fillPercentage = 100;
-        } else if (diffDays > weekInDays) {
-          // Дедлайн больше чем через неделю - зеленый, 0%
+        } else if (diffDays >= 3 && diffDays <= 4) {
+          // 3-4 дня до дедлайна - желтый
+          indicatorColor = '#FDD253';
+        } else if (diffDays > 7) {
+          // Больше 7 дней - зеленый
           indicatorColor = '#62C53E';
-          fillPercentage = 0;
         } else {
-          // Дедлайн в пределах недели - используем timedelta.delta если есть, иначе вычисляем
-          if (task.timedelta && typeof task.timedelta.delta === 'number') {
-            const delta = Math.min(100, Math.max(0, task.timedelta.delta));
-            fillPercentage = delta;
-            
-            // Определяем цвет на основе delta: 0-33 = LOW (зеленый), 34-66 = MEDIUM (желтый), 67-100 = HIGH (красный)
-            if (delta >= 67) {
-              indicatorColor = '#FD5353'; // красный
-            } else if (delta >= 34) {
-              indicatorColor = '#FDD253'; // желтый
-            } else {
-              indicatorColor = '#62C53E'; // зеленый
-            }
-          } else {
-            // Если timedelta нет, вычисляем на основе оставшихся дней до дедлайна
-            // Чем ближе к дедлайну, тем больше процент и краснее цвет
-            fillPercentage = Math.min(100, Math.max(0, ((weekInDays - diffDays) / weekInDays) * 100));
-            
-            if (fillPercentage >= 67) {
-              indicatorColor = '#FD5353'; // красный
-            } else if (fillPercentage >= 34) {
-              indicatorColor = '#FDD253'; // желтый
-            } else {
-              indicatorColor = '#62C53E'; // зеленый
-            }
-          }
+          // 5-7 дней - желтый (промежуточное состояние)
+          indicatorColor = '#FDD253';
         }
         
         return (
@@ -465,7 +445,7 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
               zIndex: 2,
             }}
           >
-            {/* Фон индикатора */}
+            {/* Вся шкала закрашена одним цветом */}
             <div
               style={{
                 position: 'absolute',
@@ -473,22 +453,10 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
                 left: 0,
                 right: 0,
                 height: '100%',
-                backgroundColor: '#404040',
-                zIndex: 0,
-              }}
-            />
-            {/* Заполненная часть индикатора */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                height: '100%',
-                width: `${fillPercentage}%`,
+                width: '100%',
                 backgroundColor: indicatorColor,
-                transition: 'width 0.3s ease, background-color 0.3s ease',
+                transition: 'background-color 0.3s ease',
                 zIndex: 1,
-                minWidth: fillPercentage > 0 ? '1px' : '0px',
               }}
             />
           </div>
