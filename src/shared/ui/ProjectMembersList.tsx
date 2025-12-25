@@ -45,119 +45,30 @@ export default function ProjectMembersList({
     };
   }, [isOpen]);
 
-  // Если нет участников и пользователь не владелец, не показываем ничего
-  if (displayMembers.length === 0 && !isOwner) {
-    return null;
-  }
-
   return (
     <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block', marginLeft: 'clamp(12px, 2vw, 20px)' }}>
-      {/* Кнопка-триггер с аватарами участников */}
+      {/* Кнопка-триггер */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center"
+        className="text-white font-medium lowercase"
         style={{
-          gap: '0',
+          padding: 'clamp(10px, 1.2vw, 14px) clamp(20px, 2.5vw, 28px)',
+          borderRadius: '32px',
+          backgroundColor: '#1E80D9',
+          fontSize: 'clamp(16px, 2vw, 20px)',
           border: 'none',
-          background: 'transparent',
           cursor: 'pointer',
-          padding: '0',
+          transition: 'background-color 0.3s ease',
+          whiteSpace: 'nowrap',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#166BB7';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '#1E80D9';
         }}
       >
-        {displayMembers.length > 0 ? (
-          <>
-            {displayMembers.slice(0, 3).map((member, index) => (
-              <div
-                key={member.id}
-                title={member.name || member.email}
-                style={{
-                  width: 'clamp(40px, 5vw, 50px)',
-                  height: 'clamp(40px, 5vw, 50px)',
-                  borderRadius: '50%',
-                  overflow: 'hidden',
-                  marginLeft: index > 0 ? '-8px' : '0',
-                  border: '2px solid #242528',
-                  zIndex: 10 - index,
-                  position: 'relative',
-                  aspectRatio: '1 / 1',
-                  flexShrink: 0,
-                }}
-              >
-                {member.avatar_url ? (
-                  <img
-                    src={member.avatar_url}
-                    alt={member.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      borderRadius: '50%',
-                      display: 'block',
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '50%',
-                      backgroundColor: '#1E80D9',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#FFFFFF',
-                      fontWeight: 'bold',
-                      fontSize: 'clamp(16px, 2vw, 20px)',
-                    }}
-                  >
-                    {member.name?.charAt(0).toUpperCase() || member.email?.charAt(0).toUpperCase() || '?'}
-                  </div>
-                )}
-              </div>
-            ))}
-            {displayMembers.length > 3 && (
-              <div
-                style={{
-                  width: 'clamp(40px, 5vw, 50px)',
-                  height: 'clamp(40px, 5vw, 50px)',
-                  borderRadius: '50%',
-                  backgroundColor: '#313236',
-                  border: '2px solid #242528',
-                  marginLeft: '-8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontWeight: 'bold',
-                  fontSize: 'clamp(12px, 1.5vw, 16px)',
-                  zIndex: 0,
-                  flexShrink: 0,
-                }}
-                title={`Еще ${displayMembers.length - 3} участников`}
-              >
-                +{displayMembers.length - 3}
-              </div>
-            )}
-          </>
-        ) : (
-          <div
-            style={{
-              width: 'clamp(40px, 5vw, 50px)',
-              height: 'clamp(40px, 5vw, 50px)',
-              borderRadius: '50%',
-              backgroundColor: '#313236',
-              border: '2px solid #242528',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              fontWeight: 'bold',
-              fontSize: 'clamp(12px, 1.5vw, 16px)',
-            }}
-          >
-            {displayMembers.length}
-          </div>
-        )}
+        моя команда
       </button>
 
       {/* Выпадающее меню */}

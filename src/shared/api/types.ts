@@ -48,6 +48,10 @@ export interface Task {
   created_at: string;
   updated_at: string;
   tag_ids?: string[];
+  timedelta?: {
+    status: 'low' | 'mid' | 'high';
+    delta: number; // 0-100
+  };
 }
 
 export interface TaskCreatePayload {

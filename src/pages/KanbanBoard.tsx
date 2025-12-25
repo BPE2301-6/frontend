@@ -388,6 +388,37 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
       >
         ×
       </button>
+
+      {/* Индикатор дедлайна - узкая полоска внизу карточки */}
+      {task.due_date && task.timedelta && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            backgroundColor: '#404040',
+            borderBottomLeftRadius: '20px',
+            borderBottomRightRadius: '20px',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${Math.min(100, Math.max(0, task.timedelta.delta))}%`,
+              backgroundColor:
+                task.timedelta.status === 'low'
+                  ? '#62C53E' // зеленый
+                  : task.timedelta.status === 'mid'
+                  ? '#FDD253' // желтый
+                  : '#FD5353', // красный
+              transition: 'width 0.3s ease, background-color 0.3s ease',
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
