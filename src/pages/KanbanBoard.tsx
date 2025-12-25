@@ -85,6 +85,16 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
   const priorityColor = PRIORITY_COLOR[task.priority] || PRIORITY_COLOR.MEDIUM;
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [checklistItems, setChecklistItems] = useState<Record<string, ChecklistItem[]>>({});
+  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Обновляем текущую дату каждую минуту для динамического обновления индикатора
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 60000); // Обновляем каждую минуту
+    
+    return () => clearInterval(interval);
+  }, []);
   
   // Загрузка чеклистов для задачи
   useEffect(() => {
@@ -392,16 +402,55 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
       </button>
 
       {/* Индикатор дедлайна - узкая полоска внизу карточки */}
-      {task.due_date && task.timedelta && (() => {
-        const delta = Math.min(100, Math.max(0, task.timedelta.delta));
-        // delta показывает время с последнего обновления статуса:
-        // 0 = только что обновлена (зеленый), 100 = неделя и больше (красный)
-        // Определяем цвет на основе delta: 0-33 = LOW (зеленый), 34-66 = MEDIUM (желтый), 67-100 = HIGH (красный)
-        let indicatorColor = '#62C53E'; // зеленый по умолчанию (LOW - задача недавно обновлена)
-        if (delta >= 67) {
-          indicatorColor = '#FD5353'; // красный (HIGH - задача давно не обновлялась, неделя+)
-        } else if (delta >= 34) {
-          indicatorColor = '#FDD253'; // желтый (MEDIUM - среднее время с обновления)
+      {task.due_date && (() => {
+        // Вычисляем индикатор динамически относительно текущей даты
+        const dueDate = new Date(task.due_date);
+        const today = new Date(currentDate);
+        today.setHours(0, 0, 0, 0);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        const diffTime = dueDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const weekInDays = 7;
+        
+        let indicatorColor = '#62C53E'; // зеленый по умолчанию
+        let fillPercentage = 0;
+        
+        if (diffDays < 0) {
+          // Дедлайн прошел - красный, 100%
+          indicatorColor = '#FD5353';
+          fillPercentage = 100;
+        } else if (diffDays > weekInDays) {
+          // Дедлайн больше чем через неделю - зеленый, 0%
+          indicatorColor = '#62C53E';
+          fillPercentage = 0;
+        } else {
+          // Дедлайн в пределах недели - используем timedelta.delta если есть, иначе вычисляем
+          if (task.timedelta && typeof task.timedelta.delta === 'number') {
+            const delta = Math.min(100, Math.max(0, task.timedelta.delta));
+            fillPercentage = delta;
+            
+            // Определяем цвет на основе delta: 0-33 = LOW (зеленый), 34-66 = MEDIUM (желтый), 67-100 = HIGH (красный)
+            if (delta >= 67) {
+              indicatorColor = '#FD5353'; // красный
+            } else if (delta >= 34) {
+              indicatorColor = '#FDD253'; // желтый
+            } else {
+              indicatorColor = '#62C53E'; // зеленый
+            }
+          } else {
+            // Если timedelta нет, вычисляем на основе оставшихся дней до дедлайна
+            // Чем ближе к дедлайну, тем больше процент и краснее цвет
+            fillPercentage = Math.min(100, Math.max(0, ((weekInDays - diffDays) / weekInDays) * 100));
+            
+            if (fillPercentage >= 67) {
+              indicatorColor = '#FD5353'; // красный
+            } else if (fillPercentage >= 34) {
+              indicatorColor = '#FDD253'; // желтый
+            } else {
+              indicatorColor = '#62C53E'; // зеленый
+            }
+          }
         }
         
         return (
@@ -425,6 +474,7 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
                 right: 0,
                 height: '100%',
                 backgroundColor: '#404040',
+                zIndex: 0,
               }}
             />
             {/* Заполненная часть индикатора */}
@@ -434,10 +484,11 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
                 bottom: 0,
                 left: 0,
                 height: '100%',
-                width: `${delta}%`,
+                width: `${fillPercentage}%`,
                 backgroundColor: indicatorColor,
                 transition: 'width 0.3s ease, background-color 0.3s ease',
                 zIndex: 1,
+                minWidth: fillPercentage > 0 ? '1px' : '0px',
               }}
             />
           </div>
