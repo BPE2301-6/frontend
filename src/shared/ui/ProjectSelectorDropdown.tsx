@@ -317,18 +317,17 @@ export default function ProjectSelectorDropdown({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {projects.map((proj) => (
-                <button
+                <div
                   key={proj.id}
-                  onClick={() => handleSelectProject(proj.id)}
-                  className="w-full text-left transition-colors"
+                  className="w-full transition-colors"
                   style={{
                     padding: 'clamp(10px, 1.2vw, 14px)',
                     borderRadius: '10px',
                     backgroundColor: proj.id === currentProjectId ? '#313236' : 'transparent',
-                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    gap: '8px',
                   }}
                   onMouseEnter={(e) => {
                     if (proj.id !== currentProjectId) {
@@ -341,23 +340,65 @@ export default function ProjectSelectorDropdown({
                     }
                   }}
                 >
-                  <div className="text-white font-medium" style={{ fontSize: 'clamp(14px, 1.8vw, 16px)' }}>
-                    {proj.name.toLowerCase()}
+                  <button
+                    onClick={() => handleSelectProject(proj.id)}
+                    className="text-left flex-1 transition-colors"
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    <div className="text-white font-medium" style={{ fontSize: 'clamp(14px, 1.8vw, 16px)' }}>
+                      {proj.name.toLowerCase()}
+                    </div>
+                  </button>
+                  <div className="flex items-center" style={{ gap: '8px', flexShrink: 0 }}>
+                    {proj.userRole === 'OWNER' && (
+                      <>
+                        <span
+                          style={{
+                            color: '#FF8800',
+                            fontSize: 'clamp(16px, 2vw, 18px)',
+                            flexShrink: 0,
+                          }}
+                          title="Владелец"
+                        >
+                          ★
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteProjectId(proj.id);
+                          }}
+                          className="text-[#FD5353] hover:text-[#FF6B6B] transition-colors"
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            fontSize: '18px',
+                            lineHeight: '1',
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 0,
+                          }}
+                          title="Удалить проект"
+                        >
+                          ×
+                        </button>
+                      </>
+                    )}
                   </div>
-                  {proj.userRole === 'OWNER' && (
-                    <span
-                      style={{
-                        color: '#FF8800',
-                        fontSize: 'clamp(16px, 2vw, 18px)',
-                        marginLeft: '8px',
-                        flexShrink: 0,
-                      }}
-                      title="Владелец"
-                    >
-                      ★
-                    </span>
-                  )}
-                </button>
+                </div>
               ))}
             </div>
           )}

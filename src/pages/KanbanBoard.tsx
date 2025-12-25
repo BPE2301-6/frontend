@@ -210,11 +210,13 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
       style={{
         marginBottom: 'clamp(16px, 2vw, 24px)',
         padding: 'clamp(16px, 2vw, 20px)',
+        paddingBottom: task.due_date && task.timedelta ? 'clamp(20px, 2.5vw, 24px)' : 'clamp(16px, 2vw, 20px)',
         width: '100%',
         border: '1px solid #404040',
         borderRadius: '20px',
         opacity: isDragging ? 0.5 : 1,
         cursor: isDragging ? 'grabbing' : 'grab',
+        overflow: 'hidden',
       }}
     >
       {/* Точка приоритета - справа в углу */}
@@ -398,14 +400,27 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
             left: 0,
             right: 0,
             height: '4px',
-            backgroundColor: '#404040',
-            borderBottomLeftRadius: '20px',
-            borderBottomRightRadius: '20px',
             overflow: 'hidden',
+            zIndex: 2,
           }}
         >
+          {/* Фон индикатора */}
           <div
             style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '100%',
+              backgroundColor: '#404040',
+            }}
+          />
+          {/* Заполненная часть индикатора */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
               height: '100%',
               width: `${Math.min(100, Math.max(0, task.timedelta.delta))}%`,
               backgroundColor:
@@ -415,6 +430,7 @@ function TaskCard({ task, onEdit, onDelete, tags, onDragStart, onDragEnd, isDrag
                   ? '#FDD253' // желтый
                   : '#FD5353', // красный
               transition: 'width 0.3s ease, background-color 0.3s ease',
+              zIndex: 1,
             }}
           />
         </div>
@@ -969,7 +985,7 @@ export default function KanbanBoard() {
           >
             {/* Название колонки с кнопкой удаления */}
             <div
-              className="flex items-center justify-between mb-4"
+              className="flex items-center justify-center mb-4 relative"
               style={{
                 paddingLeft: 'clamp(10px, 1.5vw, 20px)',
                 paddingRight: 'clamp(10px, 1.5vw, 20px)',
@@ -985,8 +1001,9 @@ export default function KanbanBoard() {
               </div>
               <button
                 onClick={() => setDeleteStatusId(status.id)}
-                className="text-white hover:text-[#FD5353] transition-colors"
+                className="absolute text-white hover:text-[#FD5353] transition-colors"
                 style={{
+                  right: 'clamp(10px, 1.5vw, 20px)',
                   width: '28px',
                   height: '28px',
                   fontSize: '20px',
